@@ -1,0 +1,30 @@
+{
+  "name": "ffa_club_table",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "dev": "node index.js",
+    "start": "node index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/timeocambon/project_ffa_club_table.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/timeocambon/project_ffa_club_table/issues"
+  },
+  "homepage": "https://github.com/timeocambon/project_ffa_club_table#readme",
+  "dependencies": {
+    "cheerio": "^1.2.0",
+    "cors": "^2.8.6",
+    "express": "^5.2.1",
+    "playwright": "^1.58.2"
+  }
+}

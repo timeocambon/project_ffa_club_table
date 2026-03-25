@@ -1,0 +1,17 @@
+Objectif: trier les résultats des athletes 
+
+Vu général: tableau qui regroupe les meilleurs perf des athletes sur toutes les épreuves pratiquées
+pris sur bilan ffa
+
+nom / prenom / num licence / caté / genre / les épreuves (double collone perf / pts UNSS)
+
+Option supplémentaire:
+- faire une option pour mettre les athletes dispo / pas dispo 
+- option pour modifier les couleurs de fond des cases par bouton on/off 
+
+
+afficher les pts en fonction de la perf
+probleme de scraping   
+
+
+quand cathégorie choisi enlevé les épreuves inutile

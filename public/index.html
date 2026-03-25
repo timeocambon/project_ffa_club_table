@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Bilans Club</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+
+  <body>
+    <header class="topbar">
+      <div class="controls">
+        <div class="field">
+          <label for="club">Club</label>
+          <input id="club" type="text" placeholder="081061" maxlength="6" value="081061" />
+        </div>
+
+        <div class="field">
+          <label for="annee">Année</label>
+          <input id="annee" type="text" placeholder="2026" maxlength="4" value="2026" />
+        </div>
+
+        <button id="btnFetch" class="btn">Charger</button>
+
+        <div class="divider"></div>
+
+        <!-- Dropdown catégories -->
+        <div class="dropdown">
+          <button id="catsBtn" class="btn secondary">Catégories ▼</button>
+          <div id="catsMenu" class="dropdown-menu hidden">
+            <div class="dropdown-actions">
+              <button id="selectAllCats">Tout</button>
+              <button id="clearCats">Effacer</button>
+            </div>
+            <div id="catsList" class="dropdown-list"></div>
+          </div>
+        </div>
+
+        <!-- Dropdown groupes d’épreuves -->
+        <div class="dropdown">
+          <button id="evtBtn" class="btn secondary">Épreuves ▼</button>
+          <div id="evtMenu" class="dropdown-menu hidden">
+            <div class="dropdown-actions">
+              <button id="selectAllEvt">Tout</button>
+              <button id="clearEvt">Effacer</button>
+            </div>
+            <div id="evtList" class="dropdown-list"></div>
+          </div>
+        </div>
+
+        <div class="status">
+          <span id="statusText">Prêt</span>
+          <span id="countBadge" class="badge" hidden>0</span>
+        </div>
+      </div>
+    </header>
+
+    <main class="main">
+      <div class="tableWrap">
+        <table id="tbl">
+          <thead id="thead"></thead>
+          <tbody id="tbody">
+            <tr>
+              <td class="empty">Clique “Charger”.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </main>
+
+    <script src="./app.js"></script>
+  </body>
+</html>
