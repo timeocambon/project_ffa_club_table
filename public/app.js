@@ -2,14 +2,12 @@ const clubEl = document.getElementById("club");
 const anneeEl = document.getElementById("annee");
 const btnFetch = document.getElementById("btnFetch");
 
-// Cat dropdown
 const catsBtn = document.getElementById("catsBtn");
 const catsMenu = document.getElementById("catsMenu");
 const catsList = document.getElementById("catsList");
 const selectAllCatsBtn = document.getElementById("selectAllCats");
 const clearCatsBtn = document.getElementById("clearCats");
 
-// Event-group dropdown
 const evtBtn = document.getElementById("evtBtn");
 const evtMenu = document.getElementById("evtMenu");
 const evtList = document.getElementById("evtList");
@@ -22,15 +20,18 @@ const statusText = document.getElementById("statusText");
 const countBadge = document.getElementById("countBadge");
 
 let rawResults = [];
-let pivoted = null; // { events, rows, cats, eventGroupsPresent }
+let pivoted = null;
 let filteredRows = [];
+let barreme50 = null;
+let barreme50LoadError = null;
+const barreme50Ready = loadBarreme50();
 
 let selectedCats = new Set();
 let selectedEvtGroups = new Set();
 
 let sortState = {
-  col: "athlete", // "athlete" | "cat" | "sex" | baseEventName
-  mode: "asc",    // "asc" | "desc" | "best" | "worst" | "none"
+  col: "athlete",
+  mode: "asc",
 };
 
 function setStatus(text, count = null) {
@@ -56,6 +57,138 @@ function escapeHtml(s) {
     .replaceAll("'", "&#039;");
 }
 
+
+async function loadBarreme50() {
+  try {
+    const res = await fetch("./barreme50.json", { cache: "no-store" });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    barreme50 = await res.json();
+    return barreme50;
+  } catch (e) {
+    console.error("Impossible de charger le barème 50.", e);
+    barreme50LoadError = e;
+    barreme50 = null;
+    return null;
+  }
+}
+
+function stripAccents(s) {
+  return String(s ?? "").normalize("NFD").replace(/[̀-ͯ]/g, "");
+}
+
+function normalizeWeightNumber(s) {
+  return String(s ?? "")
+    .replace(",", ".")
+    .trim()
+    .replace(/\.0+$/, "")
+    .replace(".", "_");
+}
+
+function eventKeyForPoints(cat, sex, eventName) {
+  const normalized = normalizeEventName(eventName);
+  let s = stripAccents(normalized).toLowerCase().trim();
+  s = s.replace(/ /g, " ");
+  s = s.replace(/\s+/g, " ").trim();
+
+  if (!s) return null;
+
+  if (s === "hauteur") return "hauteur";
+  if (s === "perche") return "perche";
+  if (s === "longueur") return "longueur";
+  if (s === "triple saut") return "triple_saut";
+
+  if (s === "50m") return cat === "Cadet" ? "50m_salle" : "50m";
+  if (s === "60m") return cat === "Cadet" ? "60m_salle" : "60m";
+  if (s === "80m") return "80m";
+  if (s === "100m") return "100m";
+  if (s === "120m") return "120m";
+  if (s === "200m") return cat === "Cadet" && sex === "M" ? "200m_salle" : "200m";
+  if (s === "300m") return "300m";
+  if (s === "400m") return "400m";
+  if (s === "800m") return "800m";
+  if (s === "1000m") return "1000m";
+  if (s === "1500m") return "1500m";
+  if (s === "2000m") return "2000m";
+  if (s === "3000m") return "3000m";
+  if (s === "1500m steeple") return "1500m_steeple";
+  if (s === "2000m steeple") return "2000m_steeple";
+  if (s === "2000m marche") return "2000m_marche";
+  if (s === "3000m marche") return "3000m_marche";
+  if (s === "4 x 60m") return "4x60m";
+  if (s === "4 x 60m mixte") return "4x60m_mixte";
+  if (s === "4 x 100m") return "4x100m";
+  if (s === "4 x 100m mixte") return "4x100m_mixte";
+
+  if (/^50m haies \(65\)$/.test(s)) return "50m_haies_65";
+  if (/^50m haies \(76\)$/.test(s)) return "50m_haies_76";
+  if (/^50m haies \(84\)$/.test(s)) return "50m_haies_84";
+  if (/^50m haies \(91\)$/.test(s)) return "50m_haies_91_salle";
+  if (/^60m haies \(76\)$/.test(s)) return "60m_haies_76_salle";
+  if (/^60m haies \(91\)$/.test(s)) return "60m_haies_91_salle";
+  if (/^80m haies \(76\)$/.test(s)) return "80m_haies_76";
+  if (/^80m haies \(84\)$/.test(s)) return "80m_haies_84";
+  if (/^100m haies \(76\)$/.test(s)) return "100m_haies_76";
+  if (/^100m haies \(84\)$/.test(s)) return "100m_haies_84";
+  if (/^110m haies \(91\)$/.test(s)) return "110m_haies_91";
+  if (/^200m haies \(76\)$/.test(s)) return "200m_haies_76";
+  if (/^320m haies \(76\)$/.test(s)) return "320m_haies_76";
+  if (/^400m haies \(76\)$/.test(s)) return "400m_haies_76";
+  if (/^400m haies \(84\)$/.test(s)) return "400m_haies_84";
+
+  let m = s.match(/^poids \(([\d.,]+)\s*kg\)$/);
+  if (m) return `poids_${normalizeWeightNumber(m[1])}kg`;
+
+  m = s.match(/^disque \(([\d.,]+)\s*kg\)$/);
+  if (m) return `disque_${normalizeWeightNumber(m[1])}kg`;
+
+  m = s.match(/^marteau \(([\d.,]+)\s*kg\)$/);
+  if (m) return `marteau_${normalizeWeightNumber(m[1])}kg`;
+
+  m = s.match(/^javelot \(([\d.,]+)\s*g\)$/);
+  if (m) return `javelot_${normalizeWeightNumber(m[1])}g`;
+
+  return null;
+}
+
+function pointsTableFor(row, eventName) {
+  if (!barreme50?.categories) return null;
+
+  const cat = row?.cat || "";
+  const sex = row?.sex || "";
+  const eventKey = eventKeyForPoints(cat, sex, eventName);
+
+  if (!eventKey) return null;
+
+  return barreme50.categories?.[cat]?.[sex]?.[eventKey] ?? null;
+}
+
+function pointsFromPerformance(row, eventName, performance) {
+  if (!performance) return null;
+
+  const table = pointsTableFor(row, eventName);
+  if (!table || !Array.isArray(table.thresholds)) return null;
+
+  const parsed = perfToComparable(performance);
+  if (!parsed || parsed.type !== table.type) return null;
+
+  if (table.type === "time") {
+    for (const entry of table.thresholds) {
+      if (parsed.value <= entry.value) return entry.points;
+    }
+    return null;
+  }
+
+  for (const entry of table.thresholds) {
+    if (parsed.value >= entry.value) return entry.points;
+  }
+
+  return null;
+}
+
+function pointsLabel(points) {
+  return Number.isFinite(points) ? String(points) : "—";
+}
+
 /* =========================
    Catégories (sans année)
 ========================= */
@@ -68,16 +201,26 @@ function categoryLabelFromInfos(infos) {
   const prefix2 = token.slice(0, 2);
 
   switch (prefix2) {
-    case "EA": return "Éveil";
-    case "PO": return "Poussin";
-    case "BE": return "Benjamin";
-    case "MI": return "Minime";
-    case "CA": return "Cadet";
-    case "JU": return "Junior";
-    case "ES": return "Espoir";
-    case "SE": return "Senior";
-    case "MA": return "Master";
-    default: return token || s;
+    case "EA":
+      return "Éveil";
+    case "PO":
+      return "Poussin";
+    case "BE":
+      return "Benjamin";
+    case "MI":
+      return "Minime";
+    case "CA":
+      return "Cadet";
+    case "JU":
+      return "Junior";
+    case "ES":
+      return "Espoir";
+    case "SE":
+      return "Senior";
+    case "MA":
+      return "Master";
+    default:
+      return token || s;
   }
 }
 
@@ -101,7 +244,7 @@ function normalizeEventName(eventName) {
   let e = (eventName || "").trim();
 
   e = e.replace(/\u00a0/g, " ");
-  e = e.replace(/(\d)\s+(\d)/g, "$1$2"); // "2 000" -> "2000"
+  e = e.replace(/(\d)\s+(\d)/g, "$1$2");
   e = e.replace(/\s+/g, " ").trim();
 
   const lower = e.toLowerCase();
@@ -118,7 +261,10 @@ function normalizeEventName(eventName) {
 
   let base = lower;
   for (const t of removeTokens) {
-    base = base.replace(new RegExp(`\\b${t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "g"), "");
+    base = base.replace(
+      new RegExp(`\\b${t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "g"),
+      "",
+    );
   }
   base = base.replace(/\s+/g, " ").trim();
   base = base.replace(/\s+nn\b/g, "").trim();
@@ -160,7 +306,10 @@ function normalizeEventName(eventName) {
 
   const m = base.match(/\b(\d+)m\b/);
   if (m) {
-    return base.replace(/\b(\d+)m\b/i, "$1m").replace(/\s+/g, " ").trim();
+    return base
+      .replace(/\b(\d+)m\b/i, "$1m")
+      .replace(/\s+/g, " ")
+      .trim();
   }
 
   return base.length ? base[0].toUpperCase() + base.slice(1) : e;
@@ -194,20 +343,26 @@ function eventGroupFromName(eventName) {
   if (/(poids|disque|javelot|marteau)/.test(e)) return "Lancers";
   if (/marche/.test(e)) return "Marche";
 
-  if (/(tri'?athlon|tetrathlon|pentathlon|heptathlon|d[ée]cathlon|combin)/.test(e)) {
+  if (
+    /(tri'?athlon|tetrathlon|pentathlon|heptathlon|d[ée]cathlon|combin)/.test(e)
+  ) {
     return "Combinées";
   }
 
-  if (/(route|trail|cross|semi|marathon)/.test(e)) return "Route / Trail / Cross";
-  if (/\b\d+(\.\d+)?\s*km\b/.test(e) && /(route|trail|cross)/.test(e)) return "Route / Trail / Cross";
+  if (/(route|trail|cross|semi|marathon)/.test(e))
+    return "Route / Trail / Cross";
+  if (/\b\d+(\.\d+)?\s*km\b/.test(e) && /(route|trail|cross)/.test(e))
+    return "Route / Trail / Cross";
 
   if (/haies/.test(e)) return "Haie";
   if (/steeple|mile/.test(e)) return "Demi-fond / Fond";
 
   if (/relais|4x/.test(e)) return "Sprint";
-  if (/\b(30|40|50|60|80|100|110|120|150|200|300|400)m\b/.test(e)) return "Sprint";
+  if (/\b(30|40|50|60|80|100|110|120|150|200|300|400)m\b/.test(e))
+    return "Sprint";
 
-  if (/\b(800|1000|1500|1600|2000|3000|5000|10000)m\b/.test(e)) return "Demi-fond / Fond";
+  if (/\b(800|1000|1500|1600|2000|3000|5000|10000)m\b/.test(e))
+    return "Demi-fond / Fond";
 
   return "Autres";
 }
@@ -320,19 +475,17 @@ function betterResult(a, b) {
   const pa = a.place == null ? null : Number(a.place);
   const pb = b.place == null ? null : Number(b.place);
 
-  // place plus petite = meilleur
   if (Number.isFinite(pa) && Number.isFinite(pb)) return pb < pa ? b : a;
   if (Number.isFinite(pa) && pb == null) return a;
   if (Number.isFinite(pb) && pa == null) return b;
 
-  // pas de places -> comparer la perf
   const av = perfToComparable(a.performance);
   const bv = perfToComparable(b.performance);
   if (!av) return b;
   if (!bv) return a;
 
   const dist = av.type === "dist" || bv.type === "dist";
-  return dist ? (av.value >= bv.value ? a : b) : (av.value <= bv.value ? a : b);
+  return dist ? (av.value >= bv.value ? a : b) : av.value <= bv.value ? a : b;
 }
 
 function bestResultFromList(list) {
@@ -365,7 +518,6 @@ function pivot(results) {
     const sex = (r.sex ?? "").trim();
     const cat = categoryLabelFromInfos(infos);
 
-    // 800m uniquement Cadet et +
     if (baseEvent === "800m") {
       const allowed = ["Cadet", "Junior", "Espoir", "Senior", "Master"];
       if (!allowed.includes(cat)) continue;
@@ -390,10 +542,11 @@ function pivot(results) {
 
     const arr = row.perEvent.get(baseEvent);
 
-    const exists = arr.some((x) =>
-      x.performance === r.performance &&
-      x.date === r.date &&
-      x.location === r.location
+    const exists = arr.some(
+      (x) =>
+        x.performance === r.performance &&
+        x.date === r.date &&
+        x.location === r.location,
     );
 
     if (!exists) {
@@ -406,14 +559,16 @@ function pivot(results) {
   const cats = Array.from(catSet).sort((a, b) => {
     const ia = CAT_ORDER.indexOf(a);
     const ib = CAT_ORDER.indexOf(b);
-    if (ia !== -1 || ib !== -1) return (ia === -1 ? 999 : ia) - (ib === -1 ? 999 : ib);
+    if (ia !== -1 || ib !== -1)
+      return (ia === -1 ? 999 : ia) - (ib === -1 ? 999 : ib);
     return a.localeCompare(b, "fr", { sensitivity: "base" });
   });
 
   const eventGroupsPresent = Array.from(evtGroupSet).sort((a, b) => {
     const ia = EVT_GROUP_ORDER.indexOf(a);
     const ib = EVT_GROUP_ORDER.indexOf(b);
-    if (ia !== -1 || ib !== -1) return (ia === -1 ? 999 : ia) - (ib === -1 ? 999 : ib);
+    if (ia !== -1 || ib !== -1)
+      return (ia === -1 ? 999 : ia) - (ib === -1 ? 999 : ib);
     return a.localeCompare(b, "fr", { sensitivity: "base" });
   });
 
@@ -430,7 +585,9 @@ function looksLikePerformance(s) {
 }
 
 function cleanPerf(s) {
-  return String(s).replace(/\(.*?\)/g, "").trim();
+  return String(s)
+    .replace(/\(.*?\)/g, "")
+    .trim();
 }
 
 function perfToComparable(perf) {
@@ -441,7 +598,6 @@ function perfToComparable(perf) {
 
   s = s.replace(/\u00a0/g, " ").trim();
 
-  // distances : 5m82 / 1m53 / 14m32
   let m = s.match(/^(\d+)\s*m\s*(\d{1,2})$/i);
   if (m) {
     const meters = Number(m[1]);
@@ -451,7 +607,6 @@ function perfToComparable(perf) {
     }
   }
 
-  // distances : 6,12 / 6.12
   m = s.match(/^(\d+)[,.](\d{1,2})$/);
   if (m) {
     const meters = Number(m[1]);
@@ -461,7 +616,6 @@ function perfToComparable(perf) {
     }
   }
 
-  // distance entière simple
   m = s.match(/^(\d+)\s*m$/i);
   if (m) {
     const meters = Number(m[1]);
@@ -470,8 +624,6 @@ function perfToComparable(perf) {
     }
   }
 
-  // temps avec :
-  // 7''53 / 1'53''43 / 1h07'20'' / 1:07:20
   if (s.includes(":")) {
     const parts = s.split(":").map((p) => p.trim());
     let secPart = parts.pop();
@@ -522,15 +674,17 @@ function perfToComparable(perf) {
     if (!looksLikePerformance(s)) return null;
   }
 
-  if (![hours, minutes, seconds, hundredths].every(Number.isFinite)) return null;
+  if (![hours, minutes, seconds, hundredths].every(Number.isFinite))
+    return null;
 
-  const total = hours * 3600 + minutes * 60 + seconds + (hundredths ? hundredths / 100 : 0);
+  const total =
+    hours * 3600 + minutes * 60 + seconds + (hundredths ? hundredths / 100 : 0);
   if (!Number.isFinite(total) || total === 0) return null;
 
   return { type: "time", value: total };
 }
 
-function comparePerf(aPerf, bPerf, mode /* best|worst */) {
+function comparePerf(aPerf, bPerf, mode) {
   const a = perfToComparable(aPerf);
   const b = perfToComparable(bPerf);
 
@@ -601,7 +755,9 @@ selectAllCatsBtn.addEventListener("click", () => {
 
 clearCatsBtn.addEventListener("click", () => {
   selectedCats.clear();
-  catsList.querySelectorAll("input[type=checkbox]").forEach((cb) => (cb.checked = false));
+  catsList
+    .querySelectorAll("input[type=checkbox]")
+    .forEach((cb) => (cb.checked = false));
   applyFiltersAndSort();
   updateCatsButtonLabel();
 });
@@ -655,7 +811,9 @@ selectAllEvtBtn.addEventListener("click", () => {
 
 clearEvtBtn.addEventListener("click", () => {
   selectedEvtGroups.clear();
-  evtList.querySelectorAll("input[type=checkbox]").forEach((cb) => (cb.checked = false));
+  evtList
+    .querySelectorAll("input[type=checkbox]")
+    .forEach((cb) => (cb.checked = false));
   applyFiltersAndSort();
   updateEvtButtonLabel();
 });
@@ -674,8 +832,8 @@ function cycleSortFor(col) {
       sortState.mode === "asc"
         ? "desc"
         : sortState.mode === "desc"
-        ? "none"
-        : "asc";
+          ? "none"
+          : "asc";
     if (sortState.mode === "none") sortState.col = "athlete";
     return;
   }
@@ -688,17 +846,17 @@ function cycleSortFor(col) {
     sortState.mode === "best"
       ? "worst"
       : sortState.mode === "worst"
-      ? "none"
-      : "best";
+        ? "none"
+        : "best";
   if (sortState.mode === "none") sortState.col = "athlete";
 }
 
 function attachHeaderClicks() {
   thead.querySelectorAll("th").forEach((th) => {
+    const col = th.getAttribute("data-col");
+    if (!col) return;
     th.style.cursor = "pointer";
     th.addEventListener("click", () => {
-      const col = th.getAttribute("data-col");
-      if (!col) return;
       cycleSortFor(col);
       applyFiltersAndSort();
     });
@@ -728,7 +886,9 @@ function applyFiltersAndSort() {
 
   rows.sort((a, b) => {
     if (col === "athlete") {
-      const d = a.athlete.localeCompare(b.athlete, "fr", { sensitivity: "base" });
+      const d = a.athlete.localeCompare(b.athlete, "fr", {
+        sensitivity: "base",
+      });
       return mode === "desc" ? -d : d;
     }
 
@@ -737,12 +897,15 @@ function applyFiltersAndSort() {
       const ib = CAT_ORDER.indexOf(b.cat);
       const da = ia === -1 ? 999 : ia;
       const db = ib === -1 ? 999 : ib;
-      const d = da - db || a.cat.localeCompare(b.cat, "fr", { sensitivity: "base" });
+      const d =
+        da - db || a.cat.localeCompare(b.cat, "fr", { sensitivity: "base" });
       return mode === "desc" ? -d : d;
     }
 
     if (col === "sex") {
-      const d = (a.sex || "").localeCompare((b.sex || ""), "fr", { sensitivity: "base" });
+      const d = (a.sex || "").localeCompare(b.sex || "", "fr", {
+        sensitivity: "base",
+      });
       return mode === "desc" ? -d : d;
     }
 
@@ -765,7 +928,9 @@ function applyFiltersAndSort() {
     const dcat = (ca === -1 ? 999 : ca) - (cb === -1 ? 999 : cb);
     if (dcat !== 0) return dcat;
 
-    return (a.sex || "").localeCompare((b.sex || ""), "fr", { sensitivity: "base" });
+    return (a.sex || "").localeCompare(b.sex || "", "fr", {
+      sensitivity: "base",
+    });
   });
 
   filteredRows = rows;
@@ -777,37 +942,59 @@ function renderPivot(events, rows) {
     `<th data-col="athlete">Nom / Prénom</th>`,
     `<th data-col="cat">Catégorie</th>`,
     `<th data-col="sex">Sexe</th>`,
-    ...events.map((e) => `<th data-col="${escapeHtml(e)}">${escapeHtml(e)}</th>`),
+    ...events.flatMap((e) => [
+      `<th data-col="${escapeHtml(e)}">${escapeHtml(e)}</th>`,
+      `<th class="points-header">Pts</th>`,
+    ]),
   ].join("");
 
   thead.innerHTML = `<tr>${headerCells}</tr>`;
   attachHeaderClicks();
 
   if (!rows.length) {
-    tbody.innerHTML = `<tr><td colspan="${3 + events.length}" class="empty">Aucun résultat.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="${3 + events.length * 2}" class="empty">Aucun résultat.</td></tr>`;
     setStatus("Aucun résultat", 0);
     return;
   }
 
-  const html = rows.map((row) => {
-    const base = `
+  const html = rows
+    .map((row) => {
+      const base = `
       <td>${escapeHtml(row.athlete)}</td>
       <td>${escapeHtml(row.cat)}</td>
       <td>${escapeHtml(row.sex)}</td>
     `;
 
-    const cells = events.map((ev) => {
-      const list = row.perEvent.get(ev) || [];
-      const best = bestResultFromList(list);
-      const val = best?.performance ?? "";
-      return `<td>${escapeHtml(val)}</td>`;
-    }).join("");
+      const cells = events
+        .map((ev) => {
+          const list = row.perEvent.get(ev) || [];
+          const best = bestResultFromList(list);
+          const val = best?.performance ?? "";
+          const pts = pointsFromPerformance(row, ev, val);
 
-    return `<tr>${base}${cells}</tr>`;
-  }).join("");
+          return `
+            <td>${escapeHtml(val)}</td>
+            <td class="points-cell ${Number.isFinite(pts) ? "has-points" : "no-points"}">${escapeHtml(pointsLabel(pts))}</td>
+          `;
+        })
+        .join("");
+
+      return `<tr>${base}${cells}</tr>`;
+    })
+    .join("");
 
   tbody.innerHTML = html;
-  setStatus(`OK — lignes: ${rows.length} | épreuves: ${events.length}`, rows.length);
+
+  const pointsInfo = barreme50
+    ? " | barème 50: Benjamin / Minime / Cadet"
+    : barreme50LoadError
+      ? " | barème 50 indisponible"
+      : "";
+
+  setStatus(
+    `OK — lignes: ${rows.length} | épreuves: ${events.length}${pointsInfo}`,
+    rows.length,
+  );
 }
 
 /* =========================
@@ -827,7 +1014,10 @@ async function fetchData() {
   setStatus("Chargement…");
 
   try {
-    const res = await fetch(`/api/bilans?club=${encodeURIComponent(club)}&annee=${encodeURIComponent(annee)}`);
+    await barreme50Ready;
+    const res = await fetch(
+      `/api/bilans?club=${encodeURIComponent(club)}&annee=${encodeURIComponent(annee)}`,
+    );
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
       throw new Error(err?.error || `HTTP ${res.status}`);
@@ -857,5 +1047,9 @@ async function fetchData() {
 ========================= */
 
 btnFetch.addEventListener("click", fetchData);
-clubEl.addEventListener("keydown", (e) => { if (e.key === "Enter") fetchData(); });
-anneeEl.addEventListener("keydown", (e) => { if (e.key === "Enter") fetchData(); });
+clubEl.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") fetchData();
+});
+anneeEl.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") fetchData();
+});

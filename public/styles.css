@@ -7,23 +7,35 @@
   --accent: #4f8cff;
 }
 
-* { box-sizing: border-box; }
-html, body { height: 100%; }
+* {
+  box-sizing: border-box;
+}
+html,
+body {
+  height: 100%;
+}
 
 body {
   margin: 0;
-  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+  font-family:
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    Segoe UI,
+    Roboto,
+    Arial;
   background: var(--bg);
   color: var(--text);
 }
 
-/* Topbar fixe */
 .topbar {
   position: fixed;
-  top: 0; left: 0; right: 0;
+  top: 0;
+  left: 0;
+  right: 0;
   height: 70px;
   z-index: 1000;
-  background: rgba(11,12,16,0.96);
+  background: rgba(11, 12, 16, 0.96);
   backdrop-filter: blur(8px);
   border-bottom: 1px solid var(--line);
   display: flex;
@@ -61,32 +73,12 @@ body {
   min-width: 120px;
 }
 
-select {
-  height: 36px;
-  padding: 0 10px;
-  border-radius: 10px;
-  border: 1px solid var(--line);
-  background: var(--card);
-  color: var(--text);
-  outline: none;
-  min-width: 160px;
-}
-
-.field.cats select {
-  min-width: 200px;
-}
-
-.field .hint {
-  color: var(--muted);
-  font-size: 11px;
-}
-
 .btn {
   height: 36px;
   padding: 0 14px;
   border-radius: 10px;
-  border: 1px solid rgba(79,140,255,0.45);
-  background: rgba(79,140,255,0.18);
+  border: 1px solid rgba(79, 140, 255, 0.45);
+  background: rgba(79, 140, 255, 0.18);
   color: var(--text);
   cursor: pointer;
   font-weight: 700;
@@ -109,8 +101,8 @@ select {
   height: 22px;
   padding: 0 8px;
   border-radius: 999px;
-  background: rgba(79,140,255,0.18);
-  border: 1px solid rgba(79,140,255,0.35);
+  background: rgba(79, 140, 255, 0.18);
+  border: 1px solid rgba(79, 140, 255, 0.35);
   color: var(--text);
   font-weight: 800;
 }
@@ -122,19 +114,17 @@ select {
   align-self: center;
 }
 
-/* Espace sous la topbar */
 .main {
   padding: 14px;
   padding-top: 90px;
 }
 
-/* Table */
 .tableWrap {
   border: 1px solid var(--line);
   border-radius: 14px;
   overflow: auto;
   background: var(--card);
-  max-height: calc(100vh - 110px); /* scroll interne -> sticky header OK */
+  max-height: calc(100vh - 110px);
 }
 
 table {
@@ -145,8 +135,8 @@ table {
 }
 
 thead th {
-  position: sticky;   /* sticky fiable */
-  top: 0;             /* sticky dans le scroll interne de tableWrap */
+  position: sticky;
+  top: 0;
   z-index: 5;
   background: #0f1117;
   border-bottom: 1px solid var(--line);
@@ -157,16 +147,16 @@ thead th {
 
 tbody td {
   padding: 10px 10px;
-  border-bottom: 1px solid rgba(35,38,52,0.55);
+  border-bottom: 1px solid rgba(35, 38, 52, 0.55);
   white-space: nowrap;
 }
 
 tbody tr:nth-child(even) {
-  background: rgba(255,255,255,0.02);
+  background: rgba(255, 255, 255, 0.02);
 }
 
 tbody tr:hover {
-  background: rgba(79,140,255,0.06);
+  background: rgba(79, 140, 255, 0.06);
 }
 
 .empty {
@@ -175,9 +165,8 @@ tbody tr:hover {
   padding: 22px 10px;
 }
 
-
 .btn.secondary {
-  background: rgba(255,255,255,0.05);
+  background: rgba(255, 255, 255, 0.05);
   border: 1px solid var(--line);
 }
 
@@ -226,7 +215,6 @@ tbody tr:hover {
   cursor: pointer;
 }
 
-/* Colonne "Nom / Prénom" figée à gauche */
 thead th:first-child,
 tbody td:first-child {
   position: sticky;
@@ -236,23 +224,39 @@ tbody td:first-child {
   background-clip: padding-box;
 }
 
-/* header en haut à gauche */
 thead th:first-child {
   z-index: 8;
   background: #0f1117;
 }
 
-/* fond opaque pour le body */
 tbody td:first-child {
   background: #12141a;
 }
 
-/* ligne paire = fond opaque aussi */
 tbody tr:nth-child(even) td:first-child {
   background: #161922;
 }
 
-/* hover opaque */
 tbody tr:hover td:first-child {
   background: #182033;
+}
+
+.points-header,
+.points-cell {
+  text-align: center;
+  min-width: 52px;
+  width: 52px;
+}
+
+.points-header {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.points-cell.has-points {
+  font-weight: 700;
+}
+
+.points-cell.no-points {
+  color: var(--muted);
 }

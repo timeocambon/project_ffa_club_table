@@ -56,7 +56,11 @@ app.get("/api/bilans", async (req, res) => {
   const browserInstance = await getBrowser();
   const page = await browserInstance.newPage();
 
-  async function gotoWithRetry(url, { waitUntil = "domcontentloaded", timeout = 30000 } = {}, attempts = 3) {
+  async function gotoWithRetry(
+    url,
+    { waitUntil = "domcontentloaded", timeout = 30000 } = {},
+    attempts = 3,
+  ) {
     let lastErr;
     for (let i = 1; i <= attempts; i++) {
       try {
@@ -65,7 +69,8 @@ app.get("/api/bilans", async (req, res) => {
       } catch (e) {
         lastErr = e;
         const msg = String(e?.message || e);
-        const retryable = /ERR_NAME_NOT_RESOLVED|ERR_CONNECTION|net::|Timeout/i.test(msg);
+        const retryable =
+          /ERR_NAME_NOT_RESOLVED|ERR_CONNECTION|net::|Timeout/i.test(msg);
         if (!retryable || i === attempts) break;
         await page.waitForTimeout(700 * i);
       }
@@ -75,7 +80,12 @@ app.get("/api/bilans", async (req, res) => {
 
   await page.route("**/*", (route) => {
     const type = route.request().resourceType();
-    if (type === "image" || type === "font" || type === "stylesheet" || type === "media") {
+    if (
+      type === "image" ||
+      type === "font" ||
+      type === "stylesheet" ||
+      type === "media"
+    ) {
       return route.abort();
     }
     return route.continue();
@@ -84,8 +94,14 @@ app.get("/api/bilans", async (req, res) => {
   try {
     const all = [];
 
-    await gotoWithRetry(`${baseUrl}&frmposition=0`, { waitUntil: "domcontentloaded", timeout: 30000 }, 3);
-    await page.getByText("Résultats de votre recherche").waitFor({ timeout: 20000 });
+    await gotoWithRetry(
+      `${baseUrl}&frmposition=0`,
+      { waitUntil: "domcontentloaded", timeout: 30000 },
+      3,
+    );
+    await page
+      .getByText("Résultats de votre recherche")
+      .waitFor({ timeout: 20000 });
 
     const firstHtml = await page.content();
     const totalPages = extractTotalPages(firstHtml);
@@ -102,8 +118,14 @@ app.get("/api/bilans", async (req, res) => {
     for (let pos = 0; pos < totalPages; pos++) {
       const pageUrl = `${baseUrl}&frmposition=${pos}`;
 
-      await gotoWithRetry(pageUrl, { waitUntil: "domcontentloaded", timeout: 30000 }, 3);
-      await page.getByText("Résultats de votre recherche").waitFor({ timeout: 20000 });
+      await gotoWithRetry(
+        pageUrl,
+        { waitUntil: "domcontentloaded", timeout: 30000 },
+        3,
+      );
+      await page
+        .getByText("Résultats de votre recherche")
+        .waitFor({ timeout: 20000 });
 
       const html = await page.content();
       const { results, stats } = parseBilansWithStats(html, club, annee);
@@ -135,15 +157,17 @@ app.get("/api/bilans", async (req, res) => {
       count: filtered.length,
       results: filtered,
       source: "athle.fr",
-      ...(debug ? {
-        debugTextSample,
-        debugPages,
-        debugSteepleRaw: rawSteeple,
-        debugSteepleFiltered: filteredSteeple,
-        debugHeightRaw: rawHeight,
-        debugHeightFiltered: filteredHeight,
-        debugUniqueEvents: [...new Set(uniq.map(r => r.event))].sort()
-      } : {}),
+      ...(debug
+        ? {
+            debugTextSample,
+            debugPages,
+            debugSteepleRaw: rawSteeple,
+            debugSteepleFiltered: filteredSteeple,
+            debugHeightRaw: rawHeight,
+            debugHeightFiltered: filteredHeight,
+            debugUniqueEvents: [...new Set(uniq.map((r) => r.event))].sort(),
+          }
+        : {}),
     };
 
     if (!debug) cache.set(cacheKey, { ts: Date.now(), data });
@@ -202,49 +226,23 @@ function extractNormalizedText(html) {
   text = text.replace(/\n[ \t]+/g, "\n");
   text = text.replace(/\n{2,}/g, "\n").trim();
 
-  text = text.replace(
-    /([A-Za-zÀ-ÖØ-öø-ÿ\)])(\d{1,4}(?:h|['’]))/g,
-    "$1\n$2"
-  );
+  text = text.replace(/([A-Za-zÀ-ÖØ-öø-ÿ\)])(\d{1,4}(?:h|['’]))/g, "$1\n$2");
 
-  // ex æquo collé au lieu
-  // ex: Fronton-1m50 -> Fronton\n- 1m50
-  text = text.replace(
-    /([A-Za-zÀ-ÖØ-öø-ÿ\)])-(?=(\d{1,2}m\d{2}\b))/g,
-    "$1\n- "
-  );
+  text = text.replace(/([A-Za-zÀ-ÖØ-öø-ÿ\)])-(?=(\d{1,2}m\d{2}\b))/g, "$1\n- ");
 
-  // concours collés au lieu
-  // ex: Albi1m52 / Albi101m32 / Fronton111m25
-  text = text.replace(
-    /([A-Za-zÀ-ÖØ-öø-ÿ\)])(?=(\d{1,4}m\d{2}\b))/g,
-    "$1\n"
-  );
+  text = text.replace(/([A-Za-zÀ-ÖØ-öø-ÿ\)])(?=(\d{1,4}m\d{2}\b))/g, "$1\n");
 
-  // concours collés à la date
-  // ex: 12/10/251m32 / 16/11/25101m32 / 18/01/26111m25
-  text = text.replace(
-    /(\d{2}\/\d{2}\/\d{2})(?=(\d{1,4}m\d{2}\b))/g,
-    "$1\n"
-  );
+  text = text.replace(/(\d{2}\/\d{2}\/\d{2})(?=(\d{1,4}m\d{2}\b))/g, "$1\n");
 
-  // après une date collée à une perf
-  // ex: 26/10/2505'46'' / 26/10/25139'27'' / 26/10/25211'57'' / 26/10/252h07'20''
   text = text.replace(
     /(\d{2}\/\d{2}\/\d{2})(?=(\d{2,4}'\d{2}''\d{0,2}|\d{1,3}h\d{2}'\d{2}''\d{0,2}))/g,
-    "$1\n"
+    "$1\n",
   );
 
-  // header collé
-  // ex: Albi2026 | 50m | F
-  text = text.replace(
-    /([A-Za-zÀ-ÖØ-öø-ÿ\)])(\d{4}\s*\|)/g,
-    "$1\n$2"
-  );
+  text = text.replace(/([A-Za-zÀ-ÖØ-öø-ÿ\)])(\d{4}\s*\|)/g, "$1\n$2");
 
   text = text.replace(/\n{2,}/g, "\n").trim();
   return text;
-
 }
 
 /* =========================
@@ -288,10 +286,12 @@ function eventCategory(eventName) {
   return "Sprint";
 }
 
-
 function parseBilansWithStats(html, clubId, annee) {
   const text = extractNormalizedText(html);
-  const lines = text.split("\n").map((l) => l.trim()).filter(Boolean);
+  const lines = text
+    .split("\n")
+    .map((l) => l.trim())
+    .filter(Boolean);
 
   const results = [];
 
@@ -299,7 +299,9 @@ function parseBilansWithStats(html, clubId, annee) {
   let currentSex = null;
   let currentRank = 0;
 
-  const headerRe = new RegExp(`^${escapeRegExp(annee)}\\s*\\|\\s*([^|]+)\\|\\s*([FM])\\s*$`);
+  const headerRe = new RegExp(
+    `^${escapeRegExp(annee)}\\s*\\|\\s*([^|]+)\\|\\s*([FM])\\s*$`,
+  );
 
   const stats = {
     totalLines: lines.length,
@@ -336,7 +338,8 @@ function parseBilansWithStats(html, clubId, annee) {
       if (/^PlacePerformance/i.test(summaryLine.replace(/\s+/g, ""))) continue;
 
       if (summaryLine.includes(",") && summaryLine.includes("/")) {
-        if (!stats.firstSummaryParseError) stats.firstSummaryParseError = summaryLine;
+        if (!stats.firstSummaryParseError)
+          stats.firstSummaryParseError = summaryLine;
         continue;
       }
 
@@ -345,7 +348,8 @@ function parseBilansWithStats(html, clubId, annee) {
 
       const summary = parseSummaryLine(summaryLine, currentEvent);
       if (!summary) {
-        if (!stats.firstSummaryParseError) stats.firstSummaryParseError = summaryLine;
+        if (!stats.firstSummaryParseError)
+          stats.firstSummaryParseError = summaryLine;
         continue;
       }
       stats.summaryParsedOk += 1;
@@ -363,8 +367,8 @@ function parseBilansWithStats(html, clubId, annee) {
         Number.isFinite(summary.place) && summary.place > 0
           ? summary.place
           : isTiedLine
-          ? currentRank
-          : currentRank + 1;
+            ? currentRank
+            : currentRank + 1;
 
       currentRank = resolvedPlace;
 
@@ -403,7 +407,9 @@ function extractBetweenInline(line, startLabel, endLabel) {
 
   const afterStart = line.slice(startIdx).replace(startRe, "");
   const endIdx = afterStart.search(endRe);
-  const segment = (endIdx === -1 ? afterStart : afterStart.slice(0, endIdx)).trim();
+  const segment = (
+    endIdx === -1 ? afterStart : afterStart.slice(0, endIdx)
+  ).trim();
 
   return segment || null;
 }
@@ -428,7 +434,6 @@ function parseSummaryLine(line, currentEvent) {
   const first = tokens[0];
   const second = tokens[1] || "";
 
-  // ex æquo : "- 1m50 ..."
   if (/^[-–—]$/.test(first) && second) {
     const perf = cleanPerf(second);
     if (looksLikePerformance(perf, currentEvent)) {
@@ -438,7 +443,6 @@ function parseSummaryLine(line, currentEvent) {
       };
     }
   }
-  // cas "10 1m32 ..." / "11 1m25 ..." / "2 17''53 ..."
   else if (/^\d+$/.test(first) && second) {
     const place = parseInt(first, 10);
     const perf = cleanPerf(second);
@@ -459,7 +463,7 @@ function parseSummaryLine(line, currentEvent) {
   if (!pp) return null;
 
   const nameMatch = line.match(
-    /\b([A-ZÀ-ÖØ-Ý][A-ZÀ-ÖØ-Ý' -]{1,})\s+([A-ZÀ-ÖØ-öø-ÿ][A-Za-zÀ-ÖØ-öø-ÿ' -]*)\b/
+    /\b([A-ZÀ-ÖØ-Ý][A-ZÀ-ÖØ-Ý' -]{1,})\s+([A-ZÀ-ÖØ-öø-ÿ][A-Za-zÀ-ÖØ-öø-ÿ' -]*)\b/,
   );
   if (!nameMatch) return null;
 
@@ -481,9 +485,10 @@ function parsePlacePerfToken(token, currentEvent) {
   const event = normalizeEventName(currentEvent || "");
 
   const isFieldEvent =
-    /hauteur|perche|longueur|triple saut|poids|disque|javelot|marteau/.test(event);
+    /hauteur|perche|longueur|triple saut|poids|disque|javelot|marteau/.test(
+      event,
+    );
 
-  // concours : 101m32 -> place 10 + 1m32
   if (isFieldEvent) {
     const candidates = [];
     const fieldRange = expectedFieldRange(currentEvent);
@@ -494,14 +499,12 @@ function parsePlacePerfToken(token, currentEvent) {
 
       let score = 0;
 
-      // perf plausible pour l'épreuve
       if (fieldRange) {
         const [min, max] = fieldRange;
         if (meters >= min && meters <= max) score += 100;
         else score -= 100;
       }
 
-      // on préfère la perf complète si elle est plausible
       if (place == null) score += 20;
       else if (place >= 1 && place <= 99) score += 5;
 
@@ -513,7 +516,6 @@ function parsePlacePerfToken(token, currentEvent) {
       });
     }
 
-    // perf brute entière
     if (
       /^\d{1,2}m\d{2}$/i.test(raw) ||
       /^\d+[,.]\d{1,2}$/.test(raw) ||
@@ -522,7 +524,6 @@ function parsePlacePerfToken(token, currentEvent) {
       pushFieldCandidate(null, raw, "whole");
     }
 
-    // découpage place + perf
     for (let cut = 1; cut <= 2 && cut < raw.length; cut++) {
       const placeStr = raw.slice(0, cut);
       const perfStr = cleanPerf(raw.slice(cut));
@@ -530,7 +531,6 @@ function parsePlacePerfToken(token, currentEvent) {
       const place = parseInt(placeStr, 10);
       if (!Number.isFinite(place) || place <= 0) continue;
 
-      // rejette les faux formats du type 0m84 / 00m84 / 0,84 / 0cm84
       if (/^0\d*m\d{2}$/i.test(perfStr)) continue;
       if (/^0\d*[,.]\d{1,2}$/.test(perfStr)) continue;
       if (/^0\d*cm$/i.test(perfStr)) continue;
@@ -549,7 +549,6 @@ function parsePlacePerfToken(token, currentEvent) {
     candidates.sort((a, b) => {
       if (b.score !== a.score) return b.score - a.score;
 
-      // à score égal, on préfère la perf entière à un split
       if ((a.place == null) !== (b.place == null)) {
         return a.place == null ? -1 : 1;
       }
@@ -565,7 +564,6 @@ function parsePlacePerfToken(token, currentEvent) {
     };
   }
 
-  // courses
   let t = raw;
   t = normalizeRouteHourPerf(t, currentEvent);
 
@@ -601,7 +599,8 @@ function parsePlacePerfToken(token, currentEvent) {
   if (!candidates.length) return null;
 
   candidates.sort((a, b) => {
-    const scoreDiff = scoreCandidate(b, currentEvent) - scoreCandidate(a, currentEvent);
+    const scoreDiff =
+      scoreCandidate(b, currentEvent) - scoreCandidate(a, currentEvent);
     if (scoreDiff !== 0) return scoreDiff;
 
     const aPlaceLen = String(a.place ?? "").length;
@@ -635,17 +634,14 @@ function looksLikePerformance(s, currentEvent) {
     .replace(/’’/g, "''")
     .trim();
 
-  // concours
-  if (/^\d+m\d+$/i.test(x)) return true;      // ex: 1m98 / 14m32
-  if (/^\d+[,.]\d{1,2}$/.test(x)) return true; // ex: 1,98 / 6.12
-  if (/^\d+cm$/i.test(x)) return true;        // ex: 198cm
+  if (/^\d+m\d+$/i.test(x)) return true;
+  if (/^\d+[,.]\d{1,2}$/.test(x)) return true;
+  if (/^\d+cm$/i.test(x)) return true;
 
-  // évite les faux temps issus d'un mauvais découpage
   if (/^0\d''\d{2}$/.test(x)) return false;
   if (/^0\d{1,2}'\d{2}''\d{0,2}$/.test(x)) return false;
   if (/^0\d+h\d{2}'\d{2}''\d{0,2}$/i.test(x)) return false;
 
-  // temps
   if (/^\d{1,2}h\d{2}'\d{2}''\d{0,2}$/i.test(x)) return true;
   if (/^\d{1,3}'\d{2}''\d{0,2}$/.test(x)) return true;
   if (/^\d{1,2}''\d{2}$/.test(x)) return true;
@@ -786,7 +782,9 @@ function expectedFieldRange(eventName) {
 }
 
 function fieldPerfToMeters(perf) {
-  const s = String(perf || "").trim().replace(",", ".");
+  const s = String(perf || "")
+    .trim()
+    .replace(",", ".");
 
   let m = s.match(/^(\d+)\s*m\s*(\d{1,2})$/i);
   if (m) {
@@ -924,7 +922,9 @@ function isSelectedTrackEvent(eventName) {
   }
 
   // plat
-  return [50, 60, 80, 100, 120, 200, 300, 400, 800, 1000, 1500, 2000, 3000, 5000].includes(dist);
+  return [
+    50, 60, 80, 100, 120, 200, 300, 400, 800, 1000, 1500, 2000, 3000, 5000,
+  ].includes(dist);
 }
 
 function isAggressiveSplitEvent(eventName) {
