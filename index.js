@@ -36,7 +36,7 @@ app.get("/api/bilans", async (req, res) => {
 
   if (!/^\d{6}$/.test(club)) {
     return res.status(400).json({
-      error: "club doit être un code à 6 chiffres, ex: 081061",
+      error: "club doit être un code à 6 chiffres",
     });
   }
 
@@ -982,4 +982,8 @@ function normalizeRouteHourPerf(token, currentEvent) {
   return `${parseInt(hours, 10)}h${minutes}'${sec}''${extra}`;
 }
 
-app.listen(3001, () => console.log("API on http://localhost:3001"));
+const PORT = process.env.PORT || 3001;
+
+app.listen(PORT, () => {
+  console.log(`API on port ${PORT}`);
+});
