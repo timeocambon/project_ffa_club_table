@@ -36,7 +36,7 @@ app.get("/api/bilans", async (req, res) => {
 
   if (!/^\d{6}$/.test(club)) {
     return res.status(400).json({
-      error: "club doit être un code à 6 chiffres",
+      error: "club doit être un code à 6 chiffres, ex: 081061",
     });
   }
 

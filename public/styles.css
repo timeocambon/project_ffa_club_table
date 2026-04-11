@@ -10,6 +10,7 @@
 * {
   box-sizing: border-box;
 }
+
 html,
 body {
   height: 100%;
@@ -29,11 +30,8 @@ body {
 }
 
 .topbar {
-  position: fixed;
+  position: sticky;
   top: 0;
-  left: 0;
-  right: 0;
-  height: 70px;
   z-index: 1000;
   background: rgba(11, 12, 16, 0.96);
   backdrop-filter: blur(8px);
@@ -116,7 +114,13 @@ body {
 
 .main {
   padding: 14px;
-  padding-top: 90px;
+}
+
+.mobile-hint {
+  display: none;
+  margin: 0 0 10px;
+  color: var(--muted);
+  font-size: 12px;
 }
 
 .tableWrap {
@@ -124,7 +128,8 @@ body {
   border-radius: 14px;
   overflow: auto;
   background: var(--card);
-  max-height: calc(100vh - 110px);
+  max-height: calc(100dvh - 130px);
+  -webkit-overflow-scrolling: touch;
 }
 
 table {
@@ -176,7 +181,7 @@ tbody tr:hover {
 
 .dropdown-menu {
   position: absolute;
-  top: 45px;
+  top: calc(100% + 8px);
   left: 0;
   background: var(--card);
   border: 1px solid var(--line);
@@ -259,4 +264,97 @@ tbody tr:hover td:first-child {
 
 .points-cell.no-points {
   color: var(--muted);
+}
+
+@media (max-width: 768px) {
+  .topbar {
+    padding: 10px;
+  }
+
+  .controls {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .field,
+  .dropdown,
+  .btn,
+  .status {
+    width: 100%;
+  }
+
+  .field input,
+  .btn,
+  .dropdown > .btn {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .btn {
+    justify-content: center;
+  }
+
+  #btnFetch {
+    grid-column: 1 / -1;
+  }
+
+  .divider {
+    display: none;
+  }
+
+  .status {
+    grid-column: 1 / -1;
+    margin-left: 0;
+    justify-content: space-between;
+    padding-top: 2px;
+  }
+
+  .mobile-hint {
+    display: block;
+  }
+
+  .main {
+    padding: 10px;
+  }
+
+  .tableWrap {
+    max-height: calc(100dvh - 260px);
+    border-radius: 12px;
+  }
+
+  table {
+    font-size: 12px;
+  }
+
+  thead th,
+  tbody td {
+    padding: 8px 6px;
+  }
+
+  .dropdown-menu {
+    left: 0;
+    right: 0;
+    width: auto;
+    max-height: min(55dvh, 360px);
+  }
+
+  thead th:first-child,
+  tbody td:first-child {
+    position: static;
+    box-shadow: none;
+  }
+
+  tbody td:first-child,
+  tbody tr:nth-child(even) td:first-child,
+  tbody tr:hover td:first-child {
+    background: transparent;
+  }
+
+  .points-header,
+  .points-cell {
+    min-width: 44px;
+    width: 44px;
+  }
 }
