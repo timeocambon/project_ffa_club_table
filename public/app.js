@@ -1,6 +1,7 @@
 const clubEl = document.getElementById("club");
 const anneeEl = document.getElementById("annee");
 const btnFetch = document.getElementById("btnFetch");
+const sexFilterEl = document.getElementById("sexFilter");
 
 const catsBtn = document.getElementById("catsBtn");
 const catsMenu = document.getElementById("catsMenu");
@@ -14,10 +15,44 @@ const evtList = document.getElementById("evtList");
 const selectAllEvtBtn = document.getElementById("selectAllEvt");
 const clearEvtBtn = document.getElementById("clearEvt");
 
+const absentBtn = document.getElementById("absentBtn");
+const absentMenu = document.getElementById("absentMenu");
+const absentNamesListEl = document.getElementById("absentNamesList");
+const absentEmptyState = document.getElementById("absentEmptyState");
+const absentBottomToggle = document.getElementById("absentBottomToggle");
+const clearAbsentListBtn = document.getElementById("clearAbsentList");
+
+const paintBtn = document.getElementById("paintBtn");
+const paintMenu = document.getElementById("paintMenu");
+const clearCellColorsBtn = document.getElementById("clearCellColors");
+const clearSelectedCellBtn = document.getElementById("clearSelectedCell");
+const paintSwatches = Array.from(document.querySelectorAll("[data-paint-color]"));
+
+const saveBtn = document.getElementById("saveBtn");
+const saveMenu = document.getElementById("saveMenu");
+const saveNameEl = document.getElementById("saveName");
+const saveRefreshListBtn = document.getElementById("saveRefreshList");
+const saveCurrentViewBtn = document.getElementById("saveCurrentView");
+const savedViewsSelectEl = document.getElementById("savedViewsSelect");
+const loadSavedViewBtn = document.getElementById("loadSavedView");
+const deleteSavedViewBtn = document.getElementById("deleteSavedView");
+
 const thead = document.getElementById("thead");
 const tbody = document.getElementById("tbody");
 const statusText = document.getElementById("statusText");
 const countBadge = document.getElementById("countBadge");
+const loadingOverlay = document.getElementById("loadingOverlay");
+const athleteContextMenu = document.getElementById("athleteContextMenu");
+const ctxToggleAbsent = document.getElementById("ctxToggleAbsent");
+
+const currentYear = String(new Date().getFullYear());
+clubEl.value = "";
+clubEl.removeAttribute("value");
+anneeEl.value = currentYear;
+anneeEl.placeholder = currentYear;
+
+let isLoading = false;
+const FETCH_TIMEOUT_MS = 45000;
 
 let rawResults = [];
 let pivoted = null;
@@ -28,11 +63,28 @@ const barreme50Ready = loadBarreme50();
 
 let selectedCats = new Set();
 let selectedEvtGroups = new Set();
+let absentAthletes = new Set();
+let absentNames = [];
+const ABSENT_STORAGE_KEY = "ffa-club-table-absents";
+const ABSENT_BOTTOM_STORAGE_KEY = "ffa-club-table-absents-bottom";
+const CELL_COLORS_STORAGE_KEY = "ffa-club-table-cell-colors";
+const SAVED_VIEWS_STORAGE_KEY = "ffa-club-table-saved-views";
+const PAINTABLE_COLORS = new Set(["red", "yellow", "green"]);
+let activePaintColor = "none";
+let cellColorsByDataset = {};
+let manualCellColors = {};
+let selectedPaintCellKey = "";
+let savedViews = {};
 
 let sortState = {
   col: "athlete",
   mode: "asc",
 };
+
+let contextTargetAthlete = null;
+let longPressTimer = null;
+let longPressOrigin = null;
+let longPressTriggered = false;
 
 function setStatus(text, count = null) {
   statusText.textContent = text;
@@ -42,6 +94,16 @@ function setStatus(text, count = null) {
   } else {
     countBadge.hidden = true;
   }
+}
+
+function setLoading(loading, text = "Chargement…") {
+  isLoading = loading;
+  btnFetch.disabled = loading;
+  btnFetch.classList.toggle("is-loading", loading);
+  btnFetch.textContent = loading ? "Chargement…" : "Charger";
+  loadingOverlay.classList.toggle("hidden", !loading);
+  loadingOverlay.setAttribute("aria-hidden", loading ? "false" : "true");
+  if (loading) setStatus(text);
 }
 
 function validClub(s) {
@@ -57,6 +119,610 @@ function escapeHtml(s) {
     .replaceAll("'", "&#039;");
 }
 
+function normalizeAthleteKey(name) {
+  return stripAccents(String(name ?? ""))
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function getCurrentDatasetKey() {
+  const club = (clubEl?.value || "").trim() || "__empty_club__";
+  const annee = (anneeEl?.value || currentYear).trim() || currentYear;
+  return `${club}__${annee}`;
+}
+
+function loadCellColorStore() {
+  try {
+    const saved = localStorage.getItem(CELL_COLORS_STORAGE_KEY);
+    if (!saved) {
+      cellColorsByDataset = {};
+      manualCellColors = {};
+      return;
+    }
+
+    const parsed = JSON.parse(saved);
+    cellColorsByDataset = parsed && typeof parsed === "object" ? parsed : {};
+  } catch (e) {
+    console.warn("Impossible de relire les couleurs de cases.", e);
+    cellColorsByDataset = {};
+  }
+
+  syncCellColorsForCurrentDataset();
+}
+
+function persistCellColorStore() {
+  try {
+    const datasetKey = getCurrentDatasetKey();
+
+    if (manualCellColors && Object.keys(manualCellColors).length > 0) {
+      cellColorsByDataset[datasetKey] = manualCellColors;
+    } else {
+      delete cellColorsByDataset[datasetKey];
+    }
+
+    localStorage.setItem(
+      CELL_COLORS_STORAGE_KEY,
+      JSON.stringify(cellColorsByDataset),
+    );
+  } catch (e) {
+    console.warn("Impossible d'enregistrer les couleurs de cases.", e);
+  }
+}
+
+function syncCellColorsForCurrentDataset() {
+  const datasetKey = getCurrentDatasetKey();
+  const saved = cellColorsByDataset?.[datasetKey];
+  manualCellColors = saved && typeof saved === "object" ? { ...saved } : {};
+}
+
+function sanitizeSavedViews(raw) {
+  if (!raw || typeof raw !== "object") return {};
+
+  return Object.fromEntries(
+    Object.entries(raw)
+      .filter(([key, value]) => key && value && typeof value === "object")
+      .map(([key, value]) => [key, value]),
+  );
+}
+
+function loadSavedViewsStore() {
+  try {
+    const saved = localStorage.getItem(SAVED_VIEWS_STORAGE_KEY);
+    if (!saved) {
+      savedViews = {};
+      return;
+    }
+
+    savedViews = sanitizeSavedViews(JSON.parse(saved));
+  } catch (e) {
+    console.warn("Impossible de relire les sauvegardes.", e);
+    savedViews = {};
+  }
+}
+
+function persistSavedViewsStore() {
+  try {
+    localStorage.setItem(SAVED_VIEWS_STORAGE_KEY, JSON.stringify(savedViews));
+    renderSavedViewsList();
+  } catch (e) {
+    console.warn("Impossible d'enregistrer la sauvegarde.", e);
+    throw e;
+  }
+}
+
+function getDefaultSaveName() {
+  const club = (clubEl.value || "").trim();
+  const annee = (anneeEl.value || currentYear).trim() || currentYear;
+  return club ? `Club ${club} - ${annee}` : `Sauvegarde ${annee}`;
+}
+
+function renderSavedViewsList(preferredName = "") {
+  if (!savedViewsSelectEl) return;
+
+  const entries = Object.entries(savedViews).sort((a, b) => {
+    const ad = String(a?.[1]?.savedAt || "");
+    const bd = String(b?.[1]?.savedAt || "");
+    return bd.localeCompare(ad) || a[0].localeCompare(b[0], "fr", { sensitivity: "base" });
+  });
+
+  const currentValue = preferredName || savedViewsSelectEl.value || "";
+  savedViewsSelectEl.innerHTML = '<option value="">Aucune sauvegarde</option>';
+
+  entries.forEach(([name, snapshot]) => {
+    const option = document.createElement("option");
+    option.value = name;
+    const savedAt = snapshot?.savedAt ? new Date(snapshot.savedAt) : null;
+    const dateLabel = savedAt && !Number.isNaN(savedAt.getTime())
+      ? savedAt.toLocaleString("fr-FR", { dateStyle: "short", timeStyle: "short" })
+      : "";
+    option.textContent = dateLabel ? `${name} — ${dateLabel}` : name;
+    savedViewsSelectEl.appendChild(option);
+  });
+
+  if (currentValue && savedViews[currentValue]) {
+    savedViewsSelectEl.value = currentValue;
+  }
+}
+
+function buildCurrentSnapshot(name = "") {
+  if (!rawResults.length || !pivoted) {
+    throw new Error("Charge d'abord un club avant d'enregistrer une sauvegarde.");
+  }
+
+  const snapshotName = String(name || saveNameEl?.value || "").trim() || getDefaultSaveName();
+
+  return {
+    version: 1,
+    name: snapshotName,
+    savedAt: new Date().toISOString(),
+    club: (clubEl.value || "").trim(),
+    annee: (anneeEl.value || currentYear).trim() || currentYear,
+    rawResults,
+    selectedCats: [...selectedCats],
+    selectedEvtGroups: [...selectedEvtGroups],
+    sexFilter: sexFilterEl?.value || "all",
+    absentNames: [...absentNames],
+    absentBottom: Boolean(absentBottomToggle.checked),
+    manualCellColors: { ...manualCellColors },
+    sortState: { ...sortState },
+  };
+}
+
+function restoreSnapshot(snapshot) {
+  if (!snapshot || typeof snapshot !== "object") {
+    throw new Error("Sauvegarde invalide.");
+  }
+
+  clubEl.value = String(snapshot.club || "");
+  anneeEl.value = String(snapshot.annee || currentYear);
+
+  rawResults = Array.isArray(snapshot.rawResults) ? snapshot.rawResults : [];
+  pivoted = pivot(rawResults);
+
+  const restoredCats = new Set(Array.isArray(snapshot.selectedCats) ? snapshot.selectedCats : []);
+  const restoredEvtGroups = new Set(
+    Array.isArray(snapshot.selectedEvtGroups)
+      ? snapshot.selectedEvtGroups
+      : pivoted.eventGroupsPresent,
+  );
+
+  selectedCats = restoredCats;
+  selectedEvtGroups = restoredEvtGroups;
+  sexFilterEl.value = snapshot.sexFilter === "F" || snapshot.sexFilter === "M" ? snapshot.sexFilter : "all";
+
+  absentNames = uniqAbsentNames(Array.isArray(snapshot.absentNames) ? snapshot.absentNames : []);
+  absentBottomToggle.checked = snapshot.absentBottom !== false;
+  syncAbsentAthletesFromList();
+  saveAbsentSettings();
+
+  manualCellColors = snapshot.manualCellColors && typeof snapshot.manualCellColors === "object"
+    ? { ...snapshot.manualCellColors }
+    : {};
+  persistCellColorStore();
+
+  sortState = snapshot.sortState && typeof snapshot.sortState === "object"
+    ? { ...sortState, ...snapshot.sortState }
+    : { col: "athlete", mode: "asc" };
+
+  fillCategoriesOptions(pivoted.cats, restoredCats);
+  fillEventGroupOptions(pivoted.eventGroupsPresent, restoredEvtGroups);
+  applyFiltersAndSort();
+}
+
+function saveCurrentView() {
+  try {
+    const snapshot = buildCurrentSnapshot();
+    savedViews[snapshot.name] = snapshot;
+    persistSavedViewsStore();
+    if (saveNameEl) saveNameEl.value = snapshot.name;
+    renderSavedViewsList(snapshot.name);
+    setStatus(`Sauvegarde enregistrée : ${snapshot.name}`);
+  } catch (e) {
+    console.error(e);
+    setStatus(String(e?.message || e));
+  }
+}
+
+function loadSavedView() {
+  const name = savedViewsSelectEl?.value || "";
+  if (!name || !savedViews[name]) {
+    setStatus("Choisis une sauvegarde à charger.");
+    return;
+  }
+
+  try {
+    restoreSnapshot(savedViews[name]);
+    if (saveNameEl) saveNameEl.value = name;
+    setStatus(`Sauvegarde chargée : ${name}`);
+  } catch (e) {
+    console.error(e);
+    setStatus(String(e?.message || e));
+  }
+}
+
+function deleteSavedView() {
+  const name = savedViewsSelectEl?.value || "";
+  if (!name || !savedViews[name]) {
+    setStatus("Choisis une sauvegarde à supprimer.");
+    return;
+  }
+
+  delete savedViews[name];
+  try {
+    persistSavedViewsStore();
+    if (saveNameEl && saveNameEl.value.trim() === name) saveNameEl.value = "";
+    renderSavedViewsList();
+    setStatus(`Sauvegarde supprimée : ${name}`);
+  } catch (e) {
+    console.error(e);
+    setStatus(String(e?.message || e));
+  }
+}
+
+function updatePaintButtonLabel() {
+  const labels = {
+    none: "Couleurs ▼",
+    red: "Couleur : rouge ▼",
+    yellow: "Couleur : jaune ▼",
+    green: "Couleur : vert ▼",
+  };
+  paintBtn.textContent = labels[activePaintColor] || "Couleurs ▼";
+}
+
+function setActivePaintColor(color) {
+  activePaintColor = PAINTABLE_COLORS.has(color) ? color : "none";
+  updatePaintButtonLabel();
+
+  paintSwatches.forEach((btn) => {
+    btn.classList.toggle("is-active", btn.dataset.paintColor === activePaintColor);
+  });
+
+  document.body.classList.toggle("paint-mode", activePaintColor !== "none");
+}
+
+function buildCellKey(row, columnKey, kind = "value") {
+  return [
+    normalizeAthleteKey(row?.athlete || ""),
+    String(row?.cat || ""),
+    String(row?.sex || ""),
+    String(columnKey || ""),
+    String(kind || "value"),
+  ].join("|");
+}
+
+function getCellColor(cellKey) {
+  const color = manualCellColors?.[cellKey];
+  return PAINTABLE_COLORS.has(color) ? color : "";
+}
+
+function getCellColorClass(cellKey) {
+  const color = getCellColor(cellKey);
+  return color ? `user-color-${color}` : "";
+}
+
+function applyCellColorClass(cellEl) {
+  if (!cellEl) return;
+  cellEl.classList.remove("user-color-red", "user-color-yellow", "user-color-green");
+  const color = getCellColor(cellEl.dataset.cellKey || "");
+  if (color) cellEl.classList.add(`user-color-${color}`);
+}
+
+function updateSelectedCellButton() {
+  if (!clearSelectedCellBtn) return;
+
+  const hasSelection = Boolean(selectedPaintCellKey);
+  clearSelectedCellBtn.disabled = !hasSelection;
+  clearSelectedCellBtn.textContent = hasSelection
+    ? "Effacer la case sélectionnée"
+    : "Sélectionne une case";
+}
+
+function refreshSelectedCellUI() {
+  tbody.querySelectorAll("td.is-selected-paint-cell").forEach((cell) => {
+    cell.classList.remove("is-selected-paint-cell");
+  });
+
+  if (!selectedPaintCellKey) {
+    updateSelectedCellButton();
+    return;
+  }
+
+  const selectedCell = tbody.querySelector(`td[data-cell-key="${CSS.escape(selectedPaintCellKey)}"]`);
+  if (selectedCell) {
+    selectedCell.classList.add("is-selected-paint-cell");
+  } else {
+    selectedPaintCellKey = "";
+  }
+
+  updateSelectedCellButton();
+}
+
+function setSelectedPaintCell(cellOrKey) {
+  const nextKey = typeof cellOrKey === "string"
+    ? cellOrKey
+    : cellOrKey?.dataset?.cellKey || "";
+
+  selectedPaintCellKey = String(nextKey || "");
+  refreshSelectedCellUI();
+}
+
+function clearSelectedCellColor() {
+  if (!selectedPaintCellKey) return;
+
+  setCellColor(selectedPaintCellKey, "");
+  const selectedCell = tbody.querySelector(`td[data-cell-key="${CSS.escape(selectedPaintCellKey)}"]`);
+  if (selectedCell) applyCellColorClass(selectedCell);
+  refreshSelectedCellUI();
+}
+
+function setCellColor(cellKey, color) {
+  if (!cellKey) return;
+
+  if (PAINTABLE_COLORS.has(color)) {
+    manualCellColors[cellKey] = color;
+  } else {
+    delete manualCellColors[cellKey];
+  }
+
+  persistCellColorStore();
+}
+
+function attachPaintCellActions() {
+  tbody.querySelectorAll("td[data-cell-key]").forEach((td) => {
+    td.addEventListener("click", (e) => {
+      if (e.target.closest("button")) return;
+
+      e.stopPropagation();
+      const cellKey = td.dataset.cellKey || "";
+      setSelectedPaintCell(td);
+
+      if (activePaintColor === "none") return;
+
+      const currentColor = getCellColor(cellKey);
+      const nextColor = currentColor === activePaintColor ? "" : activePaintColor;
+      setCellColor(cellKey, nextColor);
+      applyCellColorClass(td);
+      refreshSelectedCellUI();
+    });
+  });
+}
+
+function parseAbsentNames(text) {
+  return String(text ?? "")
+    .split(/\r?\n|;/)
+    .map((name) => name.trim())
+    .filter(Boolean);
+}
+
+function uniqAbsentNames(names) {
+  const seen = new Set();
+  const result = [];
+
+  for (const rawName of names || []) {
+    const cleanName = String(rawName || "").trim();
+    if (!cleanName) continue;
+
+    const normalized = normalizeAthleteKey(cleanName);
+    if (!normalized || seen.has(normalized)) continue;
+
+    seen.add(normalized);
+    result.push(cleanName);
+  }
+
+  return result;
+}
+
+function renderAbsentNamesList() {
+  absentNamesListEl.innerHTML = "";
+  const hasNames = absentNames.length > 0;
+  absentEmptyState.hidden = hasNames;
+
+  if (!hasNames) return;
+
+  for (const name of absentNames) {
+    const li = document.createElement("li");
+    li.className = "absent-list-item";
+
+    const nameSpan = document.createElement("span");
+    nameSpan.className = "absent-list-name";
+    nameSpan.textContent = name;
+
+    const removeBtn = document.createElement("button");
+    removeBtn.type = "button";
+    removeBtn.className = "absent-remove";
+    removeBtn.dataset.removeAbsent = name;
+    removeBtn.setAttribute("aria-label", `Retirer ${name} des absents`);
+    removeBtn.title = "Retirer";
+    removeBtn.textContent = "×";
+
+    li.append(nameSpan, removeBtn);
+    absentNamesListEl.appendChild(li);
+  }
+}
+
+function updateAbsentButtonLabel() {
+  const count = absentAthletes.size;
+  absentBtn.textContent = count > 0 ? `Absents (${count}) ▼` : "Absents ▼";
+}
+
+function saveAbsentSettings() {
+  try {
+    localStorage.setItem(ABSENT_STORAGE_KEY, JSON.stringify(absentNames));
+    localStorage.setItem(
+      ABSENT_BOTTOM_STORAGE_KEY,
+      absentBottomToggle.checked ? "1" : "0",
+    );
+  } catch (e) {
+    console.warn("Impossible d'enregistrer les absents dans le navigateur.", e);
+  }
+}
+
+function syncAbsentAthletesFromList() {
+  absentAthletes = new Set(
+    absentNames.map((name) => normalizeAthleteKey(name)),
+  );
+  updateAbsentButtonLabel();
+  renderAbsentNamesList();
+}
+
+function loadAbsentSettings() {
+  try {
+    const savedNames = localStorage.getItem(ABSENT_STORAGE_KEY);
+    const savedBottom = localStorage.getItem(ABSENT_BOTTOM_STORAGE_KEY);
+
+    if (typeof savedNames === "string" && savedNames.trim()) {
+      try {
+        const parsed = JSON.parse(savedNames);
+        absentNames = Array.isArray(parsed) ? uniqAbsentNames(parsed) : [];
+      } catch {
+        absentNames = uniqAbsentNames(parseAbsentNames(savedNames));
+      }
+    }
+
+    if (savedBottom === "0") {
+      absentBottomToggle.checked = false;
+    }
+  } catch (e) {
+    console.warn("Impossible de relire les absents depuis le navigateur.", e);
+  }
+
+  syncAbsentAthletesFromList();
+}
+
+function isAbsentRow(row) {
+  return absentAthletes.has(normalizeAthleteKey(row?.athlete || ""));
+}
+
+function getRowSexValue(row) {
+  const rawSex = String(row?.sex ?? "").trim().toUpperCase();
+  if (rawSex === "F" || rawSex === "M") return rawSex;
+
+  const rawCat = String(row?.cat ?? "").trim().toUpperCase();
+  if (/(^|[^A-Z])F$/.test(rawCat) || /FEM|FILLE/.test(rawCat)) return "F";
+  if (/(^|[^A-Z])M$/.test(rawCat) || /MASC|GAR[CÇ]ON/.test(rawCat)) return "M";
+
+  return "";
+}
+
+function applyAbsentSettings() {
+  syncAbsentAthletesFromList();
+  saveAbsentSettings();
+  applyFiltersAndSort();
+}
+
+function getAbsentNamesList() {
+  return [...absentNames];
+}
+
+function setAbsentNamesList(names) {
+  absentNames = uniqAbsentNames(names);
+}
+
+function setAthleteAbsent(name, shouldBeAbsent) {
+  const normalized = normalizeAthleteKey(name);
+  if (!normalized) return;
+
+  const names = getAbsentNamesList();
+  const nextNames = names.filter((item) => normalizeAthleteKey(item) !== normalized);
+
+  if (shouldBeAbsent) nextNames.push(String(name).trim());
+
+  setAbsentNamesList(nextNames);
+  applyAbsentSettings();
+}
+
+function hideAthleteContextMenu() {
+  contextTargetAthlete = null;
+  athleteContextMenu.classList.add("hidden");
+  athleteContextMenu.setAttribute("aria-hidden", "true");
+}
+
+function showAthleteContextMenu(x, y, athleteName) {
+  contextTargetAthlete = athleteName;
+  const alreadyAbsent = absentAthletes.has(normalizeAthleteKey(athleteName));
+  ctxToggleAbsent.textContent = alreadyAbsent ? "Retirer absent" : "Mettre absent";
+
+  athleteContextMenu.classList.remove("hidden");
+  athleteContextMenu.setAttribute("aria-hidden", "false");
+
+  const margin = 8;
+  const menuRect = athleteContextMenu.getBoundingClientRect();
+  const maxX = window.innerWidth - menuRect.width - margin;
+  const maxY = window.innerHeight - menuRect.height - margin;
+  const left = Math.max(margin, Math.min(x, maxX));
+  const top = Math.max(margin, Math.min(y, maxY));
+
+  athleteContextMenu.style.left = `${left}px`;
+  athleteContextMenu.style.top = `${top}px`;
+}
+
+function clearLongPressTimer() {
+  if (longPressTimer) {
+    clearTimeout(longPressTimer);
+    longPressTimer = null;
+  }
+}
+
+function attachRowContextActions() {
+  tbody.querySelectorAll("tr[data-athlete]").forEach((tr) => {
+    const athleteName = tr.dataset.athlete || "";
+
+    tr.addEventListener("contextmenu", (e) => {
+      e.preventDefault();
+      showAthleteContextMenu(e.clientX, e.clientY, athleteName);
+    });
+
+    tr.addEventListener("pointerdown", (e) => {
+      if (e.pointerType !== "touch") return;
+
+      longPressTriggered = false;
+      longPressOrigin = {
+        x: e.clientX,
+        y: e.clientY,
+        athleteName,
+      };
+
+      clearLongPressTimer();
+      longPressTimer = setTimeout(() => {
+        longPressTriggered = true;
+        showAthleteContextMenu(longPressOrigin.x, longPressOrigin.y, longPressOrigin.athleteName);
+      }, 550);
+    });
+
+    tr.addEventListener("pointermove", (e) => {
+      if (!longPressOrigin || e.pointerType !== "touch") return;
+      const dx = Math.abs(e.clientX - longPressOrigin.x);
+      const dy = Math.abs(e.clientY - longPressOrigin.y);
+      if (dx > 10 || dy > 10) clearLongPressTimer();
+    });
+
+    const cancel = () => {
+      clearLongPressTimer();
+      longPressOrigin = null;
+    };
+
+    tr.addEventListener("pointerup", cancel);
+    tr.addEventListener("pointercancel", cancel);
+    tr.addEventListener("pointerleave", cancel);
+
+    tr.addEventListener("click", (e) => {
+      if (longPressTriggered) {
+        e.preventDefault();
+        e.stopPropagation();
+        longPressTriggered = false;
+      }
+    });
+  });
+}
+
+function fetchJsonWithTimeout(url, timeoutMs = FETCH_TIMEOUT_MS) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+  return fetch(url, { signal: controller.signal })
+    .finally(() => clearTimeout(timer));
+}
 
 async function loadBarreme50() {
   try {
@@ -710,15 +1376,18 @@ function updateCatsButtonLabel() {
   catsBtn.textContent = n > 0 ? `Catégories (${n}) ▼` : "Catégories ▼";
 }
 
-function fillCategoriesOptions(cats) {
+function fillCategoriesOptions(cats, preservedSelection = null) {
   catsList.innerHTML = "";
-  selectedCats.clear();
+  const nextSelected = preservedSelection instanceof Set
+    ? new Set([...preservedSelection].filter((cat) => cats.includes(cat)))
+    : new Set();
+  selectedCats = nextSelected;
 
   cats.forEach((cat) => {
     const safeId = "cat_" + cat.replace(/[^\w]/g, "_");
     const label = document.createElement("label");
     label.innerHTML = `
-      <input type="checkbox" value="${escapeHtml(cat)}" id="${safeId}">
+      <input type="checkbox" value="${escapeHtml(cat)}" id="${safeId}" ${selectedCats.has(cat) ? "checked" : ""}>
       ${escapeHtml(cat)}
     `;
     const cb = label.querySelector("input");
@@ -740,6 +1409,9 @@ document.addEventListener("click", (e) => {
   if (!e.target.closest(".dropdown")) {
     catsMenu.classList.add("hidden");
     evtMenu.classList.add("hidden");
+    absentMenu.classList.add("hidden");
+    paintMenu.classList.add("hidden");
+    saveMenu.classList.add("hidden");
   }
 });
 
@@ -771,17 +1443,18 @@ function updateEvtButtonLabel() {
   evtBtn.textContent = n > 0 ? `Épreuves (${n}) ▼` : "Épreuves ▼";
 }
 
-function fillEventGroupOptions(groups) {
+function fillEventGroupOptions(groups, preservedSelection = null) {
   evtList.innerHTML = "";
-  selectedEvtGroups.clear();
-
-  groups.forEach((g) => selectedEvtGroups.add(g));
+  const nextSelected = preservedSelection instanceof Set
+    ? new Set([...preservedSelection].filter((g) => groups.includes(g)))
+    : new Set(groups);
+  selectedEvtGroups = nextSelected;
 
   groups.forEach((g) => {
     const safeId = "evt_" + g.replace(/[^\w]/g, "_");
     const label = document.createElement("label");
     label.innerHTML = `
-      <input type="checkbox" value="${escapeHtml(g)}" id="${safeId}" checked>
+      <input type="checkbox" value="${escapeHtml(g)}" id="${safeId}" ${selectedEvtGroups.has(g) ? "checked" : ""}>
       ${escapeHtml(g)}
     `;
     const cb = label.querySelector("input");
@@ -816,6 +1489,88 @@ clearEvtBtn.addEventListener("click", () => {
     .forEach((cb) => (cb.checked = false));
   applyFiltersAndSort();
   updateEvtButtonLabel();
+});
+
+/* =========================
+   Dropdown absents
+========================= */
+
+absentBtn.addEventListener("click", () => absentMenu.classList.toggle("hidden"));
+paintBtn.addEventListener("click", () => paintMenu.classList.toggle("hidden"));
+saveBtn.addEventListener("click", () => {
+  renderSavedViewsList();
+  saveMenu.classList.toggle("hidden");
+});
+
+paintSwatches.forEach((btn) => {
+  btn.addEventListener("click", () => {
+    setActivePaintColor(btn.dataset.paintColor || "none");
+  });
+});
+
+clearSelectedCellBtn?.addEventListener("click", () => {
+  clearSelectedCellColor();
+});
+
+clearCellColorsBtn.addEventListener("click", () => {
+  manualCellColors = {};
+  persistCellColorStore();
+  applyFiltersAndSort();
+});
+
+
+saveRefreshListBtn?.addEventListener("click", () => {
+  renderSavedViewsList();
+});
+
+saveCurrentViewBtn?.addEventListener("click", saveCurrentView);
+loadSavedViewBtn?.addEventListener("click", loadSavedView);
+deleteSavedViewBtn?.addEventListener("click", deleteSavedView);
+
+savedViewsSelectEl?.addEventListener("change", () => {
+  const name = savedViewsSelectEl.value || "";
+  if (saveNameEl && name) saveNameEl.value = name;
+});
+
+saveNameEl?.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") {
+    e.preventDefault();
+    saveCurrentView();
+  }
+});
+
+absentBottomToggle.addEventListener("change", applyAbsentSettings);
+clearAbsentListBtn.addEventListener("click", () => {
+  setAbsentNamesList([]);
+  absentBottomToggle.checked = true;
+  applyAbsentSettings();
+});
+
+absentNamesListEl.addEventListener("click", (e) => {
+  const removeBtn = e.target.closest("[data-remove-absent]");
+  if (!removeBtn) return;
+  e.stopPropagation();
+  setAthleteAbsent(removeBtn.dataset.removeAbsent || "", false);
+});
+
+ctxToggleAbsent.addEventListener("click", () => {
+  if (!contextTargetAthlete) return;
+  const athleteName = contextTargetAthlete;
+  const shouldBeAbsent = !absentAthletes.has(normalizeAthleteKey(athleteName));
+  hideAthleteContextMenu();
+  setAthleteAbsent(athleteName, shouldBeAbsent);
+});
+
+document.addEventListener("click", (e) => {
+  if (!e.target.closest("#athleteContextMenu")) {
+    hideAthleteContextMenu();
+  }
+});
+
+window.addEventListener("scroll", hideAthleteContextMenu, true);
+window.addEventListener("resize", hideAthleteContextMenu);
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") hideAthleteContextMenu();
 });
 
 /* =========================
@@ -867,6 +1622,11 @@ function attachHeaderClicks() {
    Filters + render
 ========================= */
 
+function rowHasPerformanceForEvent(row, eventName) {
+  const best = bestResultFromList(row?.perEvent?.get(eventName));
+  return Boolean(best?.performance?.trim());
+}
+
 function applyFiltersAndSort() {
   if (!pivoted) return;
 
@@ -876,15 +1636,34 @@ function applyFiltersAndSort() {
     rows = rows.filter((r) => selectedCats.has(r.cat));
   }
 
+  const wantedSex = sexFilterEl?.value || "all";
+  if (wantedSex !== "all") {
+    rows = rows.filter((r) => getRowSexValue(r) === wantedSex);
+  }
+
   const visibleEvents = pivoted.events.filter((ev) => {
     if (selectedEvtGroups.size === 0) return false;
     const g = eventGroupFromName(ev);
-    return selectedEvtGroups.has(g);
+    if (!selectedEvtGroups.has(g)) return false;
+
+    return rows.some((row) => rowHasPerformanceForEvent(row, ev));
   });
+
+  if (sortState.col !== "athlete" && sortState.col !== "cat" && sortState.col !== "sex") {
+    if (!visibleEvents.includes(sortState.col)) {
+      sortState = { col: "athlete", mode: "asc" };
+    }
+  }
 
   const { col, mode } = sortState;
 
   rows.sort((a, b) => {
+    if (absentBottomToggle.checked) {
+      const aAbsent = isAbsentRow(a);
+      const bAbsent = isAbsentRow(b);
+      if (aAbsent !== bAbsent) return aAbsent ? 1 : -1;
+    }
+
     if (col === "athlete") {
       const d = a.athlete.localeCompare(b.athlete, "fr", {
         sensitivity: "base",
@@ -959,10 +1738,15 @@ function renderPivot(events, rows) {
 
   const html = rows
     .map((row) => {
+      const absent = isAbsentRow(row);
+      const absentBadge = absent ? '<span class="absent-badge">Absent</span>' : "";
+      const athleteCellKey = buildCellKey(row, "athlete", "meta");
+      const catCellKey = buildCellKey(row, "cat", "meta");
+      const sexCellKey = buildCellKey(row, "sex", "meta");
       const base = `
-      <td>${escapeHtml(row.athlete)}</td>
-      <td>${escapeHtml(row.cat)}</td>
-      <td>${escapeHtml(row.sex)}</td>
+      <td data-cell-key="${escapeHtml(athleteCellKey)}" class="paintable-cell ${getCellColorClass(athleteCellKey)}">${escapeHtml(row.athlete)}${absentBadge}</td>
+      <td data-cell-key="${escapeHtml(catCellKey)}" class="paintable-cell ${getCellColorClass(catCellKey)}">${escapeHtml(row.cat)}</td>
+      <td data-cell-key="${escapeHtml(sexCellKey)}" class="paintable-cell ${getCellColorClass(sexCellKey)}">${escapeHtml(row.sex)}</td>
     `;
 
       const cells = events
@@ -971,28 +1755,34 @@ function renderPivot(events, rows) {
           const best = bestResultFromList(list);
           const val = best?.performance ?? "";
           const pts = pointsFromPerformance(row, ev, val);
+          const performanceCellKey = buildCellKey(row, ev, "performance");
+          const pointsCellKey = buildCellKey(row, ev, "points");
 
           return `
-            <td>${escapeHtml(val)}</td>
-            <td class="points-cell ${Number.isFinite(pts) ? "has-points" : "no-points"}">${escapeHtml(pointsLabel(pts))}</td>
+            <td data-cell-key="${escapeHtml(performanceCellKey)}" class="paintable-cell ${getCellColorClass(performanceCellKey)}">${escapeHtml(val)}</td>
+            <td data-cell-key="${escapeHtml(pointsCellKey)}" class="points-cell paintable-cell ${Number.isFinite(pts) ? "has-points" : "no-points"} ${getCellColorClass(pointsCellKey)}">${escapeHtml(pointsLabel(pts))}</td>
           `;
         })
         .join("");
 
-      return `<tr>${base}${cells}</tr>`;
+      return `<tr data-athlete="${escapeHtml(row.athlete)}" class="${absent ? "absent-row" : ""}">${base}${cells}</tr>`;
     })
     .join("");
 
   tbody.innerHTML = html;
+  attachRowContextActions();
+  attachPaintCellActions();
+  refreshSelectedCellUI();
 
   const pointsInfo = barreme50
     ? " | barème 50: Benjamin / Minime / Cadet"
     : barreme50LoadError
       ? " | barème 50 indisponible"
       : "";
+  const absentInfo = absentAthletes.size ? ` | absents: ${absentAthletes.size}` : "";
 
   setStatus(
-    `OK — lignes: ${rows.length} | épreuves: ${events.length}${pointsInfo}`,
+    `OK — lignes: ${rows.length} | épreuves: ${events.length}${pointsInfo}${absentInfo}`,
     rows.length,
   );
 }
@@ -1002,21 +1792,25 @@ function renderPivot(events, rows) {
 ========================= */
 
 async function fetchData() {
+  if (isLoading) return;
+
   const club = (clubEl.value || "").trim();
-  const annee = (anneeEl.value || "2026").trim();
+  const annee = (anneeEl.value || currentYear).trim();
 
   if (!validClub(club)) {
     setStatus("Club invalide (6 chiffres).");
-    tbody.innerHTML = `<tr><td class="empty">Ex: 081061</td></tr>`;
+    tbody.innerHTML = `<tr><td class="empty">Entre un numéro de club valide.</td></tr>`;
     return;
   }
 
-  setStatus("Chargement…");
+  syncCellColorsForCurrentDataset();
+  setLoading(true, "Chargement des résultats…");
 
   try {
     await barreme50Ready;
-    const res = await fetch(
+    const res = await fetchJsonWithTimeout(
       `/api/bilans?club=${encodeURIComponent(club)}&annee=${encodeURIComponent(annee)}`,
+      FETCH_TIMEOUT_MS,
     );
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
@@ -1037,14 +1831,27 @@ async function fetchData() {
     console.error(e);
     pivoted = null;
     thead.innerHTML = "";
-    tbody.innerHTML = `<tr><td class="empty">Erreur: ${escapeHtml(String(e.message || e))}</td></tr>`;
-    setStatus("Erreur");
+
+    const message = e?.name === "AbortError"
+      ? "Le chargement a pris trop de temps. Réessaie dans quelques secondes."
+      : String(e?.message || e);
+
+    tbody.innerHTML = `<tr><td class="empty">Erreur: ${escapeHtml(message)}</td></tr>`;
+    setStatus(e?.name === "AbortError" ? "Temps d'attente dépassé" : "Erreur");
+  } finally {
+    setLoading(false);
   }
 }
 
 /* =========================
    Events
 ========================= */
+
+loadAbsentSettings();
+loadCellColorStore();
+loadSavedViewsStore();
+renderSavedViewsList();
+setActivePaintColor("none");
 
 btnFetch.addEventListener("click", fetchData);
 clubEl.addEventListener("keydown", (e) => {
@@ -1053,3 +1860,4 @@ clubEl.addEventListener("keydown", (e) => {
 anneeEl.addEventListener("keydown", (e) => {
   if (e.key === "Enter") fetchData();
 });
+sexFilterEl.addEventListener("change", applyFiltersAndSort);

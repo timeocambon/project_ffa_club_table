@@ -24,6 +24,7 @@ async function getBrowser() {
 
 const cache = new Map();
 const CACHE_MS = 5 * 60 * 1000; // 5 minutes
+const SCRAPE_TIMEOUT_MS = 45000;
 
 /* =========================
    ROUTE API
@@ -92,7 +93,10 @@ app.get("/api/bilans", async (req, res) => {
   });
 
   try {
-    const all = [];
+    const data = await Promise.race([
+      (async () => {
+        const all = [];
+
 
     await gotoWithRetry(
       `${baseUrl}&frmposition=0`,
@@ -172,9 +176,18 @@ app.get("/api/bilans", async (req, res) => {
 
     if (!debug) cache.set(cacheKey, { ts: Date.now(), data });
 
+        return data;
+      })(),
+      new Promise((_, reject) => {
+        setTimeout(() => reject(new Error("Le scraping a dépassé le temps limite.")), SCRAPE_TIMEOUT_MS);
+      }),
+    ]);
+
     return res.json(data);
   } catch (e) {
-    return res.status(500).json({ error: "scrape_failed", details: String(e) });
+    const message = String(e?.message || e);
+    const status = /temps limite/i.test(message) ? 504 : 500;
+    return res.status(status).json({ error: "scrape_failed", details: message });
   } finally {
     await page.close();
   }

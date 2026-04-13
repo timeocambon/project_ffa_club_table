@@ -15,9 +15,9 @@
           <input
             id="club"
             type="text"
-            placeholder="081061"
+            placeholder="Numéro du club"
             maxlength="6"
-            value="081061"
+            autocomplete="off"
           />
         </div>
 
@@ -26,9 +26,9 @@
           <input
             id="annee"
             type="text"
-            placeholder="2026"
+            placeholder="Année en cours"
             maxlength="4"
-            value="2026"
+            inputmode="numeric"
           />
         </div>
 
@@ -48,6 +48,15 @@
           </div>
         </div>
 
+        <div class="field">
+          <label for="sexFilter">Sexe</label>
+          <select id="sexFilter">
+            <option value="all">Tous</option>
+            <option value="F">Filles</option>
+            <option value="M">Garçons</option>
+          </select>
+        </div>
+
         <!-- Dropdown groupes d’épreuves -->
         <div class="dropdown">
           <button id="evtBtn" class="btn secondary">Épreuves ▼</button>
@@ -60,6 +69,75 @@
           </div>
         </div>
 
+        <!-- Gestion des absents -->
+        <div class="dropdown">
+          <button id="absentBtn" class="btn secondary">Absents ▼</button>
+          <div id="absentMenu" class="dropdown-menu absent-menu hidden">
+            <div class="dropdown-actions">
+              <strong>Absents</strong>
+              <button id="clearAbsentList">Effacer</button>
+            </div>
+            <div class="absent-field">
+              <span>Liste des absents</span>
+              <p id="absentEmptyState" class="absent-empty">Aucun absent sélectionné.</p>
+              <ul id="absentNamesList" class="absent-list" aria-live="polite"></ul>
+            </div>
+            <label class="absent-toggle">
+              <input id="absentBottomToggle" type="checkbox" checked />
+              Mettre les absents en bas
+            </label>
+          </div>
+        </div>
+
+        <div class="dropdown">
+          <button id="paintBtn" class="btn secondary">Couleurs ▼</button>
+          <div id="paintMenu" class="dropdown-menu paint-menu hidden">
+            <div class="dropdown-actions">
+              <strong>Couleurs</strong>
+              <button id="clearCellColors">Tout effacer</button>
+            </div>
+            <button id="clearSelectedCell" class="paint-action-btn" type="button" disabled>Effacer la case sélectionnée</button>
+            <div class="paint-toolbar">
+              <button type="button" class="paint-swatch is-active" data-paint-color="none">Aucune</button>
+              <button type="button" class="paint-swatch" data-paint-color="red">Rouge</button>
+              <button type="button" class="paint-swatch" data-paint-color="yellow">Jaune</button>
+              <button type="button" class="paint-swatch" data-paint-color="green">Vert</button>
+            </div>
+            <p class="paint-help">Clique une case pour la sélectionner. Choisis ensuite une couleur, ou efface uniquement la case sélectionnée.</p>
+          </div>
+        </div>
+
+        <div class="dropdown">
+          <button id="saveBtn" class="btn secondary">Sauvegardes ▼</button>
+          <div id="saveMenu" class="dropdown-menu save-menu hidden">
+            <div class="dropdown-actions">
+              <strong>Sauvegardes</strong>
+              <button id="saveRefreshList" type="button">Actualiser</button>
+            </div>
+
+            <div class="field compact-field">
+              <label for="saveName">Nom de la sauvegarde</label>
+              <input id="saveName" type="text" placeholder="Nom de la sauvegarde" maxlength="60" autocomplete="off" />
+            </div>
+
+            <button id="saveCurrentView" class="paint-action-btn" type="button">Enregistrer la vue actuelle</button>
+
+            <div class="field compact-field">
+              <label for="savedViewsSelect">Sauvegardes enregistrées</label>
+              <select id="savedViewsSelect">
+                <option value="">Aucune sauvegarde</option>
+              </select>
+            </div>
+
+            <div class="save-actions-row">
+              <button id="loadSavedView" class="paint-action-btn" type="button">Charger</button>
+              <button id="deleteSavedView" class="paint-action-btn danger" type="button">Supprimer</button>
+            </div>
+
+            <p class="paint-help">La sauvegarde mémorise le club, l'année, les filtres, les absents, les couleurs et les résultats chargés pour les rouvrir plus tard sur ce navigateur.</p>
+          </div>
+        </div>
+
         <div class="status">
           <span id="statusText">Prêt</span>
           <span id="countBadge" class="badge" hidden>0</span>
@@ -69,6 +147,17 @@
 
     <main class="main">
       <p class="mobile-hint">Sur téléphone, fais glisser le tableau horizontalement pour voir toutes les colonnes.</p>
+      <div id="loadingOverlay" class="loading-overlay hidden" aria-hidden="true">
+        <div class="loading-card" role="status" aria-live="polite">
+          <div class="loading-spinner"></div>
+          <div class="loading-title">Chargement des résultats…</div>
+          <div class="loading-subtitle">Récupération des bilans du club, merci de patienter.</div>
+        </div>
+      </div>
+
+      <div id="athleteContextMenu" class="context-menu hidden" aria-hidden="true">
+        <button id="ctxToggleAbsent" class="context-menu-item" type="button">Mettre absent</button>
+      </div>
       <div class="tableWrap">
         <table id="tbl">
           <thead id="thead"></thead>
