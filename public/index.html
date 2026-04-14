@@ -33,108 +33,157 @@
         </div>
 
         <button id="btnFetch" class="btn">Charger</button>
+        <button
+          id="mobileOptionsToggle"
+          class="btn secondary mobile-only"
+          type="button"
+          aria-expanded="false"
+          aria-controls="mobileOptionsPanel"
+        >
+          Options ▼
+        </button>
 
-        <div class="divider"></div>
+        <div id="mobileOptionsPanel" class="controls-panel hidden">
+          <div class="divider"></div>
 
-        <!-- Dropdown catégories -->
-        <div class="dropdown">
-          <button id="catsBtn" class="btn secondary">Catégories ▼</button>
-          <div id="catsMenu" class="dropdown-menu hidden">
-            <div class="dropdown-actions">
-              <button id="selectAllCats">Tout</button>
-              <button id="clearCats">Effacer</button>
+          <!-- Dropdown catégories -->
+          <div class="dropdown">
+            <button id="catsBtn" class="btn secondary">Catégories ▼</button>
+            <div id="catsMenu" class="dropdown-menu hidden">
+              <div class="dropdown-actions">
+                <button id="selectAllCats">Tout</button>
+                <button id="clearCats">Effacer</button>
+              </div>
+              <div id="catsList" class="dropdown-list"></div>
             </div>
-            <div id="catsList" class="dropdown-list"></div>
           </div>
-        </div>
 
-        <div class="field">
-          <label for="sexFilter">Sexe</label>
-          <select id="sexFilter">
-            <option value="all">Tous</option>
-            <option value="F">Filles</option>
-            <option value="M">Garçons</option>
-          </select>
-        </div>
-
-        <!-- Dropdown groupes d’épreuves -->
-        <div class="dropdown">
-          <button id="evtBtn" class="btn secondary">Épreuves ▼</button>
-          <div id="evtMenu" class="dropdown-menu hidden">
-            <div class="dropdown-actions">
-              <button id="selectAllEvt">Tout</button>
-              <button id="clearEvt">Effacer</button>
+          <div class="dropdown">
+            <button id="sexBtn" class="btn secondary" type="button">Sexe : Tous ▼</button>
+            <div id="sexMenu" class="dropdown-menu sex-menu hidden">
+              <div class="dropdown-actions">
+                <strong>Sexe</strong>
+                <button id="resetSexFilter" type="button">Tous</button>
+              </div>
+              <div class="sex-options">
+                <button type="button" class="sex-option is-active" data-sex-value="all">Tous</button>
+                <button type="button" class="sex-option" data-sex-value="M">Hommes</button>
+                <button type="button" class="sex-option" data-sex-value="F">Femmes</button>
+              </div>
             </div>
-            <div id="evtList" class="dropdown-list"></div>
+            <select id="sexFilter" class="visually-hidden" aria-hidden="true" tabindex="-1">
+              <option value="all">Tous</option>
+              <option value="F">Femmes</option>
+              <option value="M">Hommes</option>
+            </select>
           </div>
-        </div>
 
-        <!-- Gestion des absents -->
-        <div class="dropdown">
-          <button id="absentBtn" class="btn secondary">Absents ▼</button>
-          <div id="absentMenu" class="dropdown-menu absent-menu hidden">
-            <div class="dropdown-actions">
-              <strong>Absents</strong>
-              <button id="clearAbsentList">Effacer</button>
+          <!-- Dropdown groupes d’épreuves -->
+          <div class="dropdown">
+            <button id="evtBtn" class="btn secondary">Épreuves ▼</button>
+            <div id="evtMenu" class="dropdown-menu hidden">
+              <div class="dropdown-actions">
+                <button id="selectAllEvt">Tout</button>
+                <button id="clearEvt">Effacer</button>
+              </div>
+              <div id="evtList" class="dropdown-list"></div>
             </div>
-            <div class="absent-field">
-              <span>Liste des absents</span>
-              <p id="absentEmptyState" class="absent-empty">Aucun absent sélectionné.</p>
-              <ul id="absentNamesList" class="absent-list" aria-live="polite"></ul>
-            </div>
-            <label class="absent-toggle">
-              <input id="absentBottomToggle" type="checkbox" checked />
-              Mettre les absents en bas
-            </label>
           </div>
-        </div>
 
-        <div class="dropdown">
-          <button id="paintBtn" class="btn secondary">Couleurs ▼</button>
-          <div id="paintMenu" class="dropdown-menu paint-menu hidden">
-            <div class="dropdown-actions">
-              <strong>Couleurs</strong>
-              <button id="clearCellColors">Tout effacer</button>
+          <div class="dropdown">
+            <button id="sortBtn" class="btn secondary">Tri ▼</button>
+            <div id="sortMenu" class="dropdown-menu sort-menu hidden">
+              <div class="dropdown-actions">
+                <strong>Tri</strong>
+                <button id="sortResetBtn" type="button">Réinitialiser</button>
+              </div>
+
+              <div class="field compact-field">
+                <label for="sortColumnSelect">Trier par</label>
+                <select id="sortColumnSelect">
+                  <option value="athlete">Nom / Prénom</option>
+                </select>
+              </div>
+
+              <div class="field compact-field">
+                <label for="sortOrderSelect">Ordre</label>
+                <select id="sortOrderSelect">
+                  <option value="asc">Ascendant</option>
+                  <option value="desc">Descendant</option>
+                </select>
+              </div>
+
+              <button id="sortApplyBtn" class="paint-action-btn" type="button">Appliquer le tri</button>
             </div>
-            <button id="clearSelectedCell" class="paint-action-btn" type="button" disabled>Effacer la case sélectionnée</button>
-            <div class="paint-toolbar">
-              <button type="button" class="paint-swatch is-active" data-paint-color="none">Aucune</button>
-              <button type="button" class="paint-swatch" data-paint-color="red">Rouge</button>
-              <button type="button" class="paint-swatch" data-paint-color="yellow">Jaune</button>
-              <button type="button" class="paint-swatch" data-paint-color="green">Vert</button>
-            </div>
-            <p class="paint-help">Clique une case pour la sélectionner. Choisis ensuite une couleur, ou efface uniquement la case sélectionnée.</p>
           </div>
-        </div>
 
-        <div class="dropdown">
-          <button id="saveBtn" class="btn secondary">Sauvegardes ▼</button>
-          <div id="saveMenu" class="dropdown-menu save-menu hidden">
-            <div class="dropdown-actions">
-              <strong>Sauvegardes</strong>
-              <button id="saveRefreshList" type="button">Actualiser</button>
+          <!-- Gestion des absents -->
+          <div class="dropdown">
+            <button id="absentBtn" class="btn secondary">Absents ▼</button>
+            <div id="absentMenu" class="dropdown-menu absent-menu hidden">
+              <div class="dropdown-actions">
+                <strong>Absents</strong>
+                <button id="clearAbsentList">Effacer</button>
+              </div>
+              <div class="absent-field">
+                <span>Liste des absents</span>
+                <p id="absentEmptyState" class="absent-empty">Aucun absent sélectionné.</p>
+                <ul id="absentNamesList" class="absent-list" aria-live="polite"></ul>
+              </div>
+              <label class="absent-toggle">
+                <input id="absentBottomToggle" type="checkbox" checked />
+                Mettre les absents en bas
+              </label>
             </div>
+          </div>
 
-            <div class="field compact-field">
-              <label for="saveName">Nom de la sauvegarde</label>
-              <input id="saveName" type="text" placeholder="Nom de la sauvegarde" maxlength="60" autocomplete="off" />
+          <div class="dropdown">
+            <button id="paintBtn" class="btn secondary">Couleurs ▼</button>
+            <div id="paintMenu" class="dropdown-menu paint-menu hidden">
+              <div class="dropdown-actions">
+                <strong>Couleurs</strong>
+                <button id="clearCellColors">Tout effacer</button>
+              </div>
+              <button id="clearSelectedCell" class="paint-action-btn" type="button" disabled>Effacer la case sélectionnée</button>
+              <div class="paint-toolbar">
+                <button type="button" class="paint-swatch is-active" data-paint-color="none">Aucune</button>
+                <button type="button" class="paint-swatch" data-paint-color="red">Rouge</button>
+                <button type="button" class="paint-swatch" data-paint-color="yellow">Jaune</button>
+                <button type="button" class="paint-swatch" data-paint-color="green">Vert</button>
+              </div>
+              <p class="paint-help">Clique une case pour la sélectionner. Choisis ensuite une couleur, ou efface uniquement la case sélectionnée.</p>
             </div>
+          </div>
 
-            <button id="saveCurrentView" class="paint-action-btn" type="button">Enregistrer la vue actuelle</button>
+          <div class="dropdown">
+            <button id="saveBtn" class="btn secondary">Sauvegardes ▼</button>
+            <div id="saveMenu" class="dropdown-menu save-menu hidden">
+              <div class="dropdown-actions">
+                <strong>Sauvegardes</strong>
+                <button id="saveRefreshList" type="button">Actualiser</button>
+              </div>
 
-            <div class="field compact-field">
-              <label for="savedViewsSelect">Sauvegardes enregistrées</label>
-              <select id="savedViewsSelect">
-                <option value="">Aucune sauvegarde</option>
-              </select>
+              <div class="field compact-field">
+                <label for="saveName">Nom de la sauvegarde</label>
+                <input id="saveName" type="text" placeholder="Nom de la sauvegarde" maxlength="60" autocomplete="off" />
+              </div>
+
+              <button id="saveCurrentView" class="paint-action-btn" type="button">Enregistrer la vue actuelle</button>
+
+              <div class="field compact-field">
+                <label for="savedViewsSelect">Sauvegardes enregistrées</label>
+                <select id="savedViewsSelect">
+                  <option value="">Aucune sauvegarde</option>
+                </select>
+              </div>
+
+              <div class="save-actions-row">
+                <button id="loadSavedView" class="paint-action-btn" type="button">Charger</button>
+                <button id="deleteSavedView" class="paint-action-btn danger" type="button">Supprimer</button>
+              </div>
+
+              <p class="paint-help">La sauvegarde mémorise le club, l'année, les filtres, les absents, les couleurs et les résultats chargés pour les rouvrir plus tard sur ce navigateur.</p>
             </div>
-
-            <div class="save-actions-row">
-              <button id="loadSavedView" class="paint-action-btn" type="button">Charger</button>
-              <button id="deleteSavedView" class="paint-action-btn danger" type="button">Supprimer</button>
-            </div>
-
-            <p class="paint-help">La sauvegarde mémorise le club, l'année, les filtres, les absents, les couleurs et les résultats chargés pour les rouvrir plus tard sur ce navigateur.</p>
           </div>
         </div>
 
@@ -146,7 +195,6 @@
     </header>
 
     <main class="main">
-      <p class="mobile-hint">Sur téléphone, fais glisser le tableau horizontalement pour voir toutes les colonnes.</p>
       <div id="loadingOverlay" class="loading-overlay hidden" aria-hidden="true">
         <div class="loading-card" role="status" aria-live="polite">
           <div class="loading-spinner"></div>

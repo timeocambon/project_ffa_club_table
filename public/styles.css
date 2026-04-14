@@ -73,6 +73,9 @@ body {
 }
 
 .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   height: 36px;
   padding: 0 14px;
   border-radius: 10px;
@@ -81,6 +84,21 @@ body {
   color: var(--text);
   cursor: pointer;
   font-weight: 700;
+}
+
+.mobile-only {
+  display: none;
+}
+
+.controls-panel {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.controls-panel.hidden {
+  display: flex;
 }
 
 .status {
@@ -117,12 +135,6 @@ body {
   padding: 14px;
 }
 
-.mobile-hint {
-  display: none;
-  margin: 0 0 10px;
-  color: var(--muted);
-  font-size: 12px;
-}
 
 .tableWrap {
   border: 1px solid var(--line);
@@ -286,6 +298,36 @@ tbody tr:hover {
   cursor: pointer;
 }
 
+
+.visually-hidden {
+  display: none !important;
+}
+
+.sex-menu {
+  width: min(260px, calc(100vw - 28px));
+}
+
+.sex-options {
+  display: grid;
+  gap: 8px;
+}
+
+.sex-option {
+  min-height: 36px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: #0f1117;
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+}
+
+.sex-option.is-active {
+  border-color: rgba(79, 140, 255, 0.55);
+  box-shadow: 0 0 0 1px rgba(79, 140, 255, 0.25) inset;
+  background: rgba(79, 140, 255, 0.1);
+}
+
 thead th:first-child,
 tbody td:first-child {
   position: sticky;
@@ -344,14 +386,19 @@ tbody tr:hover td:first-child {
     gap: 8px;
   }
 
+  .mobile-only {
+    display: inline-flex;
+  }
+
   .field,
   .dropdown,
   .btn,
-  .status {
+  .status,
+  .controls-panel {
     width: 100%;
   }
 
-   .field input,
+  .field input,
   .field select,
   .btn,
   .dropdown > .btn {
@@ -363,8 +410,37 @@ tbody tr:hover td:first-child {
     justify-content: center;
   }
 
-  #btnFetch {
+  #btnFetch,
+  #mobileOptionsToggle,
+  .controls-panel,
+  .status {
     grid-column: 1 / -1;
+  }
+
+  .controls-panel {
+    display: grid;
+    grid-template-columns: 1fr;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .controls-panel.hidden {
+    display: none;
+  }
+
+  .controls-panel .dropdown,
+  .controls-panel .field {
+    width: 100%;
+  }
+
+  .controls-panel .dropdown-menu {
+    position: static;
+    top: auto;
+    left: auto;
+    right: auto;
+    width: 100%;
+    max-height: min(50dvh, 360px);
+    margin-top: 8px;
   }
 
   .divider {
@@ -372,14 +448,9 @@ tbody tr:hover td:first-child {
   }
 
   .status {
-    grid-column: 1 / -1;
     margin-left: 0;
     justify-content: space-between;
     padding-top: 2px;
-  }
-
-  .mobile-hint {
-    display: block;
   }
 
   .main {
@@ -387,7 +458,7 @@ tbody tr:hover td:first-child {
   }
 
   .tableWrap {
-    max-height: calc(100dvh - 260px);
+    max-height: calc(100dvh - 280px);
     border-radius: 12px;
   }
 
@@ -400,23 +471,26 @@ tbody tr:hover td:first-child {
     padding: 8px 6px;
   }
 
-  .dropdown-menu {
-    left: 0;
-    right: 0;
-    width: auto;
-    max-height: min(55dvh, 360px);
-  }
-
   thead th:first-child,
   tbody td:first-child {
-    position: static;
-    box-shadow: none;
+    left: 0;
+    box-shadow: 2px 0 0 var(--line);
   }
 
-  tbody td:first-child,
-  tbody tr:nth-child(even) td:first-child,
+  thead th:first-child {
+    z-index: 8;
+  }
+
+  tbody td:first-child {
+    background: #12141a;
+  }
+
+  tbody tr:nth-child(even) td:first-child {
+    background: #161922;
+  }
+
   tbody tr:hover td:first-child {
-    background: transparent;
+    background: #182033;
   }
 
   .points-header,
@@ -695,6 +769,7 @@ tbody tr:hover td:first-child.user-color-green {
 }
 
 
+.sort-menu,
 .save-menu {
   width: min(360px, calc(100vw - 28px));
 }

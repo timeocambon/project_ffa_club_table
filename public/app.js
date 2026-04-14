@@ -1,7 +1,13 @@
 const clubEl = document.getElementById("club");
 const anneeEl = document.getElementById("annee");
 const btnFetch = document.getElementById("btnFetch");
+const mobileOptionsToggle = document.getElementById("mobileOptionsToggle");
+const mobileOptionsPanel = document.getElementById("mobileOptionsPanel");
 const sexFilterEl = document.getElementById("sexFilter");
+const sexBtn = document.getElementById("sexBtn");
+const sexMenu = document.getElementById("sexMenu");
+const resetSexFilterBtn = document.getElementById("resetSexFilter");
+const sexOptionButtons = Array.from(document.querySelectorAll("[data-sex-value]"));
 
 const catsBtn = document.getElementById("catsBtn");
 const catsMenu = document.getElementById("catsMenu");
@@ -37,6 +43,13 @@ const savedViewsSelectEl = document.getElementById("savedViewsSelect");
 const loadSavedViewBtn = document.getElementById("loadSavedView");
 const deleteSavedViewBtn = document.getElementById("deleteSavedView");
 
+const sortBtn = document.getElementById("sortBtn");
+const sortMenu = document.getElementById("sortMenu");
+const sortColumnSelect = document.getElementById("sortColumnSelect");
+const sortOrderSelect = document.getElementById("sortOrderSelect");
+const sortApplyBtn = document.getElementById("sortApplyBtn");
+const sortResetBtn = document.getElementById("sortResetBtn");
+
 const thead = document.getElementById("thead");
 const tbody = document.getElementById("tbody");
 const statusText = document.getElementById("statusText");
@@ -50,6 +63,7 @@ clubEl.value = "";
 clubEl.removeAttribute("value");
 anneeEl.value = currentYear;
 anneeEl.placeholder = currentYear;
+updateSexFilterUi();
 
 let isLoading = false;
 const FETCH_TIMEOUT_MS = 45000;
@@ -57,6 +71,7 @@ const FETCH_TIMEOUT_MS = 45000;
 let rawResults = [];
 let pivoted = null;
 let filteredRows = [];
+let currentVisibleEvents = [];
 let barreme50 = null;
 let barreme50LoadError = null;
 const barreme50Ready = loadBarreme50();
@@ -105,6 +120,51 @@ function setLoading(loading, text = "Chargement…") {
   loadingOverlay.setAttribute("aria-hidden", loading ? "false" : "true");
   if (loading) setStatus(text);
 }
+
+function isMobileViewport() {
+  return window.matchMedia("(max-width: 768px)").matches;
+}
+
+function hideAllDropdownMenus() {
+  catsMenu.classList.add("hidden");
+  sexMenu.classList.add("hidden");
+  evtMenu.classList.add("hidden");
+  absentMenu.classList.add("hidden");
+  paintMenu.classList.add("hidden");
+  saveMenu.classList.add("hidden");
+  sortMenu.classList.add("hidden");
+}
+
+function renderMobileOptionsState() {
+  if (!mobileOptionsToggle || !mobileOptionsPanel) return;
+
+  if (!isMobileViewport()) {
+    mobileOptionsPanel.classList.remove("hidden");
+    mobileOptionsToggle.setAttribute("aria-expanded", "true");
+    mobileOptionsToggle.textContent = "Options ▼";
+    return;
+  }
+
+  const isOpen = !mobileOptionsPanel.classList.contains("hidden");
+  mobileOptionsToggle.setAttribute("aria-expanded", String(isOpen));
+  mobileOptionsToggle.textContent = isOpen ? "Options ▲" : "Options ▼";
+
+  if (!isOpen) hideAllDropdownMenus();
+}
+
+function toggleMobileOptionsPanel() {
+  if (!mobileOptionsPanel || !mobileOptionsToggle || !isMobileViewport()) return;
+  mobileOptionsPanel.classList.toggle("hidden");
+  renderMobileOptionsState();
+}
+
+function toggleDropdownMenu(menuEl) {
+  if (!menuEl) return;
+  const shouldOpen = menuEl.classList.contains("hidden");
+  hideAllDropdownMenus();
+  menuEl.classList.toggle("hidden", !shouldOpen);
+}
+
 
 function validClub(s) {
   return /^\d{6}$/.test((s || "").trim());
@@ -290,6 +350,7 @@ function restoreSnapshot(snapshot) {
   selectedCats = restoredCats;
   selectedEvtGroups = restoredEvtGroups;
   sexFilterEl.value = snapshot.sexFilter === "F" || snapshot.sexFilter === "M" ? snapshot.sexFilter : "all";
+  updateSexFilterUi();
 
   absentNames = uniqAbsentNames(Array.isArray(snapshot.absentNames) ? snapshot.absentNames : []);
   absentBottomToggle.checked = snapshot.absentBottom !== false;
@@ -1376,6 +1437,27 @@ function updateCatsButtonLabel() {
   catsBtn.textContent = n > 0 ? `Catégories (${n}) ▼` : "Catégories ▼";
 }
 
+function updateSexFilterUi() {
+  const labels = {
+    all: "Sexe : Tous ▼",
+    M: "Sexe : Hommes ▼",
+    F: "Sexe : Femmes ▼",
+  };
+  const value = sexFilterEl?.value || "all";
+  if (sexBtn) sexBtn.textContent = labels[value] || labels.all;
+  sexOptionButtons.forEach((btn) => {
+    btn.classList.toggle("is-active", (btn.dataset.sexValue || "all") === value);
+  });
+}
+
+function setSexFilter(value = "all") {
+  if (!sexFilterEl) return;
+  const normalized = value === "F" || value === "M" ? value : "all";
+  sexFilterEl.value = normalized;
+  updateSexFilterUi();
+  applyFiltersAndSort();
+}
+
 function fillCategoriesOptions(cats, preservedSelection = null) {
   catsList.innerHTML = "";
   const nextSelected = preservedSelection instanceof Set
@@ -1403,15 +1485,18 @@ function fillCategoriesOptions(cats, preservedSelection = null) {
   updateCatsButtonLabel();
 }
 
-catsBtn.addEventListener("click", () => catsMenu.classList.toggle("hidden"));
+catsBtn.addEventListener("click", () => toggleDropdownMenu(catsMenu));
+sexBtn?.addEventListener("click", () => toggleDropdownMenu(sexMenu));
+resetSexFilterBtn?.addEventListener("click", () => setSexFilter("all"));
+sexOptionButtons.forEach((btn) => {
+  btn.addEventListener("click", () => {
+    setSexFilter(btn.dataset.sexValue || "all");
+  });
+});
 
 document.addEventListener("click", (e) => {
   if (!e.target.closest(".dropdown")) {
-    catsMenu.classList.add("hidden");
-    evtMenu.classList.add("hidden");
-    absentMenu.classList.add("hidden");
-    paintMenu.classList.add("hidden");
-    saveMenu.classList.add("hidden");
+    hideAllDropdownMenus();
   }
 });
 
@@ -1470,7 +1555,7 @@ function fillEventGroupOptions(groups, preservedSelection = null) {
   updateEvtButtonLabel();
 }
 
-evtBtn.addEventListener("click", () => evtMenu.classList.toggle("hidden"));
+evtBtn.addEventListener("click", () => toggleDropdownMenu(evtMenu));
 
 selectAllEvtBtn.addEventListener("click", () => {
   selectedEvtGroups.clear();
@@ -1495,11 +1580,15 @@ clearEvtBtn.addEventListener("click", () => {
    Dropdown absents
 ========================= */
 
-absentBtn.addEventListener("click", () => absentMenu.classList.toggle("hidden"));
-paintBtn.addEventListener("click", () => paintMenu.classList.toggle("hidden"));
+absentBtn.addEventListener("click", () => toggleDropdownMenu(absentMenu));
+paintBtn.addEventListener("click", () => toggleDropdownMenu(paintMenu));
+sortBtn.addEventListener("click", () => {
+  syncSortMenuControls();
+  toggleDropdownMenu(sortMenu);
+});
 saveBtn.addEventListener("click", () => {
   renderSavedViewsList();
-  saveMenu.classList.toggle("hidden");
+  toggleDropdownMenu(saveMenu);
 });
 
 paintSwatches.forEach((btn) => {
@@ -1539,6 +1628,25 @@ saveNameEl?.addEventListener("keydown", (e) => {
   }
 });
 
+sortColumnSelect?.addEventListener("change", () => {
+  const col = sortColumnSelect.value || "athlete";
+  const orderOptions = getSortModeOptionsForColumn(col);
+  sortOrderSelect.innerHTML = orderOptions
+    .map((option) => `<option value="${option.value}">${escapeHtml(option.label)}</option>`)
+    .join("");
+  sortOrderSelect.value = getDefaultSortModeForColumn(col);
+});
+
+sortApplyBtn?.addEventListener("click", () => {
+  applySortMenuSelection();
+});
+
+sortResetBtn?.addEventListener("click", () => {
+  sortState = { col: "athlete", mode: "asc" };
+  syncSortMenuControls();
+  applyFiltersAndSort();
+});
+
 absentBottomToggle.addEventListener("change", applyAbsentSettings);
 clearAbsentListBtn.addEventListener("click", () => {
   setAbsentNamesList([]);
@@ -1572,6 +1680,85 @@ window.addEventListener("resize", hideAthleteContextMenu);
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape") hideAthleteContextMenu();
 });
+
+/* =========================
+   Tri
+========================= */
+
+function getSortableColumns() {
+  const baseColumns = [
+    { value: "athlete", label: "Nom / Prénom" },
+    { value: "cat", label: "Catégorie" },
+    { value: "sex", label: "Sexe" },
+  ];
+
+  const eventColumns = (currentVisibleEvents.length ? currentVisibleEvents : pivoted?.events || []).map((eventName) => ({
+    value: eventName,
+    label: eventName,
+  }));
+
+  return [...baseColumns, ...eventColumns];
+}
+
+function getSortModeOptionsForColumn(col) {
+  if (col === "athlete" || col === "cat" || col === "sex") {
+    return [
+      { value: "asc", label: "Ascendant" },
+      { value: "desc", label: "Descendant" },
+    ];
+  }
+
+  return [
+    { value: "best", label: "Meilleur d'abord" },
+    { value: "worst", label: "Moins bon d'abord" },
+  ];
+}
+
+function getDefaultSortModeForColumn(col) {
+  return col === "athlete" || col === "cat" || col === "sex" ? "asc" : "best";
+}
+
+function syncSortMenuControls() {
+  if (!sortColumnSelect || !sortOrderSelect) return;
+
+  const columns = getSortableColumns();
+  const availableValues = new Set(columns.map((column) => column.value));
+
+  let selectedCol = sortState.col;
+  if (!availableValues.has(selectedCol)) {
+    selectedCol = sortColumnSelect.value && availableValues.has(sortColumnSelect.value)
+      ? sortColumnSelect.value
+      : "athlete";
+  }
+
+  sortColumnSelect.innerHTML = columns
+    .map((column) => `<option value="${escapeHtml(column.value)}">${escapeHtml(column.label)}</option>`)
+    .join("");
+  sortColumnSelect.value = selectedCol;
+
+  const orderOptions = getSortModeOptionsForColumn(selectedCol);
+  const allowedModes = new Set(orderOptions.map((option) => option.value));
+  const selectedMode = allowedModes.has(sortState.mode) ? sortState.mode : getDefaultSortModeForColumn(selectedCol);
+
+  sortOrderSelect.innerHTML = orderOptions
+    .map((option) => `<option value="${option.value}">${escapeHtml(option.label)}</option>`)
+    .join("");
+  sortOrderSelect.value = selectedMode;
+}
+
+function applySortMenuSelection() {
+  if (!sortColumnSelect || !sortOrderSelect) return;
+
+  const col = sortColumnSelect.value || "athlete";
+  const allowedModes = new Set(getSortModeOptionsForColumn(col).map((option) => option.value));
+  const mode = allowedModes.has(sortOrderSelect.value)
+    ? sortOrderSelect.value
+    : getDefaultSortModeForColumn(col);
+
+  sortState = { col, mode };
+  applyFiltersAndSort();
+  syncSortMenuControls();
+}
 
 /* =========================
    Tri au clic sur header
@@ -1649,11 +1836,15 @@ function applyFiltersAndSort() {
     return rows.some((row) => rowHasPerformanceForEvent(row, ev));
   });
 
+  currentVisibleEvents = visibleEvents.slice();
+
   if (sortState.col !== "athlete" && sortState.col !== "cat" && sortState.col !== "sex") {
     if (!visibleEvents.includes(sortState.col)) {
       sortState = { col: "athlete", mode: "asc" };
     }
   }
+
+  syncSortMenuControls();
 
   const { col, mode } = sortState;
 
@@ -1853,6 +2044,12 @@ loadSavedViewsStore();
 renderSavedViewsList();
 setActivePaintColor("none");
 
+renderMobileOptionsState();
+syncSortMenuControls();
+
+mobileOptionsToggle?.addEventListener("click", toggleMobileOptionsPanel);
+window.addEventListener("resize", renderMobileOptionsState);
+
 btnFetch.addEventListener("click", fetchData);
 clubEl.addEventListener("keydown", (e) => {
   if (e.key === "Enter") fetchData();
@@ -1860,4 +2057,7 @@ clubEl.addEventListener("keydown", (e) => {
 anneeEl.addEventListener("keydown", (e) => {
   if (e.key === "Enter") fetchData();
 });
-sexFilterEl.addEventListener("change", applyFiltersAndSort);
+sexFilterEl.addEventListener("change", () => {
+  updateSexFilterUi();
+  applyFiltersAndSort();
+});
