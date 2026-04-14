@@ -24,11 +24,15 @@ async function getBrowser() {
 
 const cache = new Map();
 const CACHE_MS = 5 * 60 * 1000; // 5 minutes
-const SCRAPE_TIMEOUT_MS = 45000;
+const SCRAPE_TIMEOUT_MS = 180000;
 
 /* =========================
    ROUTE API
 ========================= */
+
+app.get("/healthz", (_req, res) => {
+  res.status(200).send("ok");
+});
 
 app.get("/api/bilans", async (req, res) => {
   const club = (req.query.club ?? "").toString().trim();

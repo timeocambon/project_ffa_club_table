@@ -70,7 +70,7 @@ anneeEl.placeholder = currentYear;
 updateSexFilterUi();
 
 let isLoading = false;
-const FETCH_TIMEOUT_MS = 45000;
+const FETCH_TIMEOUT_MS = 180000;
 const LOADING_PROGRESS_MESSAGES = [
   { upTo: 20, text: "Préparation de la récupération…" },
   { upTo: 40, text: "Connexion au serveur…" },
