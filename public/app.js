@@ -55,6 +55,10 @@ const tbody = document.getElementById("tbody");
 const statusText = document.getElementById("statusText");
 const countBadge = document.getElementById("countBadge");
 const loadingOverlay = document.getElementById("loadingOverlay");
+const loadingTitleEl = document.getElementById("loadingTitle");
+const loadingSubtitleEl = document.getElementById("loadingSubtitle");
+const loadingProgressFillEl = document.getElementById("loadingProgressFill");
+const loadingProgressPercentEl = document.getElementById("loadingProgressPercent");
 const athleteContextMenu = document.getElementById("athleteContextMenu");
 const ctxToggleAbsent = document.getElementById("ctxToggleAbsent");
 
@@ -66,7 +70,18 @@ anneeEl.placeholder = currentYear;
 updateSexFilterUi();
 
 let isLoading = false;
-const FETCH_TIMEOUT_MS = 180000;
+const FETCH_TIMEOUT_MS = 45000;
+const LOADING_PROGRESS_MESSAGES = [
+  { upTo: 20, text: "Préparation de la récupération…" },
+  { upTo: 40, text: "Connexion au serveur…" },
+  { upTo: 65, text: "Récupération des résultats du club…" },
+  { upTo: 85, text: "Mise en forme du tableau…" },
+  { upTo: 99, text: "Finalisation de l'affichage…" },
+  { upTo: 100, text: "Terminé." },
+];
+
+let loadingProgressValue = 0;
+let loadingProgressTimer = null;
 
 let rawResults = [];
 let pivoted = null;
@@ -102,6 +117,7 @@ let longPressOrigin = null;
 let longPressTriggered = false;
 
 function setStatus(text, count = null) {
+  if (!statusText || !countBadge) return;
   statusText.textContent = text;
   if (typeof count === "number") {
     countBadge.hidden = false;
@@ -111,6 +127,71 @@ function setStatus(text, count = null) {
   }
 }
 
+function getLoadingMessage(progress) {
+  const pct = Math.max(0, Math.min(100, Number(progress) || 0));
+  const step = LOADING_PROGRESS_MESSAGES.find((item) => pct <= item.upTo);
+  return step?.text || "Chargement…";
+}
+
+function renderLoadingProgress(subtitleText = "") {
+  const pct = Math.max(0, Math.min(100, Math.round(loadingProgressValue)));
+  if (loadingProgressFillEl) loadingProgressFillEl.style.width = `${pct}%`;
+  if (loadingProgressPercentEl) loadingProgressPercentEl.textContent = `${pct}%`;
+  if (loadingTitleEl) loadingTitleEl.textContent = "Chargement des résultats…";
+  if (loadingSubtitleEl) loadingSubtitleEl.textContent = subtitleText || getLoadingMessage(pct);
+}
+
+function clearLoadingProgressTimer() {
+  if (!loadingProgressTimer) return;
+  clearInterval(loadingProgressTimer);
+  loadingProgressTimer = null;
+}
+
+function setLoadingProgress(target, subtitleText = "") {
+  const nextValue = Math.max(0, Math.min(100, Number(target) || 0));
+  loadingProgressValue = Math.max(loadingProgressValue, nextValue);
+  renderLoadingProgress(subtitleText);
+}
+
+function startLoadingProgress() {
+  clearLoadingProgressTimer();
+  loadingProgressValue = 6;
+  renderLoadingProgress("Préparation de la récupération…");
+
+  loadingProgressTimer = setInterval(() => {
+    if (loadingProgressValue >= 92) return;
+
+    if (loadingProgressValue < 20) {
+      loadingProgressValue += 3;
+    } else if (loadingProgressValue < 45) {
+      loadingProgressValue += 2.2;
+    } else if (loadingProgressValue < 70) {
+      loadingProgressValue += 1.4;
+    } else {
+      loadingProgressValue += 0.8;
+    }
+
+    loadingProgressValue = Math.min(92, loadingProgressValue);
+    renderLoadingProgress();
+  }, 350);
+}
+
+async function completeLoadingProgress(subtitleText = "Affichage terminé.") {
+  clearLoadingProgressTimer();
+
+  const checkpoints = [96, 100];
+  for (const value of checkpoints) {
+    setLoadingProgress(value, value === 100 ? subtitleText : "Finalisation de l'affichage…");
+    await new Promise((resolve) => setTimeout(resolve, 120));
+  }
+}
+
+function resetLoadingProgress() {
+  clearLoadingProgressTimer();
+  loadingProgressValue = 0;
+  renderLoadingProgress("Préparation de la récupération du club…");
+}
+
 function setLoading(loading, text = "Chargement…") {
   isLoading = loading;
   btnFetch.disabled = loading;
@@ -118,7 +199,14 @@ function setLoading(loading, text = "Chargement…") {
   btnFetch.textContent = loading ? "Chargement…" : "Charger";
   loadingOverlay.classList.toggle("hidden", !loading);
   loadingOverlay.setAttribute("aria-hidden", loading ? "false" : "true");
-  if (loading) setStatus(text);
+
+  if (loading) {
+    startLoadingProgress();
+    setStatus(text);
+    return;
+  }
+
+  resetLoadingProgress();
 }
 
 function isMobileViewport() {
@@ -132,7 +220,7 @@ function hideAllDropdownMenus() {
   absentMenu.classList.add("hidden");
   paintMenu.classList.add("hidden");
   saveMenu.classList.add("hidden");
-  sortMenu.classList.add("hidden");
+  sortMenu?.classList.add("hidden");
 }
 
 function renderMobileOptionsState() {
@@ -1582,7 +1670,7 @@ clearEvtBtn.addEventListener("click", () => {
 
 absentBtn.addEventListener("click", () => toggleDropdownMenu(absentMenu));
 paintBtn.addEventListener("click", () => toggleDropdownMenu(paintMenu));
-sortBtn.addEventListener("click", () => {
+sortBtn?.addEventListener("click", () => {
   syncSortMenuControls();
   toggleDropdownMenu(sortMenu);
 });
@@ -1998,28 +2086,38 @@ async function fetchData() {
   setLoading(true, "Chargement des résultats…");
 
   try {
+    setLoadingProgress(12, "Préparation du chargement…");
     await barreme50Ready;
+    setLoadingProgress(22, "Connexion au serveur…");
+
     const res = await fetchJsonWithTimeout(
       `/api/bilans?club=${encodeURIComponent(club)}&annee=${encodeURIComponent(annee)}`,
       FETCH_TIMEOUT_MS,
     );
+    setLoadingProgress(55, "Réponse reçue, récupération des résultats…");
+
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
       throw new Error(err?.error || `HTTP ${res.status}`);
     }
 
     const data = await res.json();
-    rawResults = Array.isArray(data.results) ? data.results : [];
+    setLoadingProgress(72, "Analyse des résultats du club…");
 
+    rawResults = Array.isArray(data.results) ? data.results : [];
     pivoted = pivot(rawResults);
+    setLoadingProgress(84, "Mise en forme du tableau…");
 
     fillCategoriesOptions(pivoted.cats);
     fillEventGroupOptions(pivoted.eventGroupsPresent);
 
     sortState = { col: "athlete", mode: "asc" };
     applyFiltersAndSort();
+
+    await completeLoadingProgress("Résultats affichés.");
   } catch (e) {
     console.error(e);
+    clearLoadingProgressTimer();
     pivoted = null;
     thead.innerHTML = "";
 

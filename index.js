@@ -24,7 +24,7 @@ async function getBrowser() {
 
 const cache = new Map();
 const CACHE_MS = 5 * 60 * 1000; // 5 minutes
-const SCRAPE_TIMEOUT_MS = 180000;
+const SCRAPE_TIMEOUT_MS = 45000;
 
 /* =========================
    ROUTE API

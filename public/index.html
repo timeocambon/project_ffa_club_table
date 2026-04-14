@@ -90,33 +90,6 @@
             </div>
           </div>
 
-          <div class="dropdown">
-            <button id="sortBtn" class="btn secondary">Tri ▼</button>
-            <div id="sortMenu" class="dropdown-menu sort-menu hidden">
-              <div class="dropdown-actions">
-                <strong>Tri</strong>
-                <button id="sortResetBtn" type="button">Réinitialiser</button>
-              </div>
-
-              <div class="field compact-field">
-                <label for="sortColumnSelect">Trier par</label>
-                <select id="sortColumnSelect">
-                  <option value="athlete">Nom / Prénom</option>
-                </select>
-              </div>
-
-              <div class="field compact-field">
-                <label for="sortOrderSelect">Ordre</label>
-                <select id="sortOrderSelect">
-                  <option value="asc">Ascendant</option>
-                  <option value="desc">Descendant</option>
-                </select>
-              </div>
-
-              <button id="sortApplyBtn" class="paint-action-btn" type="button">Appliquer le tri</button>
-            </div>
-          </div>
-
           <!-- Gestion des absents -->
           <div class="dropdown">
             <button id="absentBtn" class="btn secondary">Absents ▼</button>
@@ -186,11 +159,6 @@
             </div>
           </div>
         </div>
-
-        <div class="status">
-          <span id="statusText">Prêt</span>
-          <span id="countBadge" class="badge" hidden>0</span>
-        </div>
       </div>
     </header>
 
@@ -198,8 +166,16 @@
       <div id="loadingOverlay" class="loading-overlay hidden" aria-hidden="true">
         <div class="loading-card" role="status" aria-live="polite">
           <div class="loading-spinner"></div>
-          <div class="loading-title">Chargement des résultats…</div>
-          <div class="loading-subtitle">Récupération des bilans du club, merci de patienter.</div>
+          <div id="loadingTitle" class="loading-title">Chargement des résultats…</div>
+          <div id="loadingSubtitle" class="loading-subtitle">Préparation de la récupération du club…</div>
+          <div class="loading-progress-wrap" aria-hidden="true">
+            <div class="loading-progress-track">
+              <div id="loadingProgressFill" class="loading-progress-fill"></div>
+            </div>
+            <div class="loading-progress-meta">
+              <span id="loadingProgressPercent">0%</span>
+            </div>
+          </div>
         </div>
       </div>
 

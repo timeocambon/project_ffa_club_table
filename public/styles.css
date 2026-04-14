@@ -13,11 +13,14 @@
 
 html,
 body {
-  height: 100%;
+  min-height: 100dvh;
+  height: auto;
 }
 
 body {
   margin: 0;
+  display: flex;
+  flex-direction: column;
   font-family:
     ui-sans-serif,
     system-ui,
@@ -132,11 +135,16 @@ body {
 }
 
 .main {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
   padding: 14px;
 }
 
-
 .tableWrap {
+  flex: 1;
+  min-height: 0;
   border: 1px solid var(--line);
   border-radius: 14px;
   overflow: auto;
@@ -454,11 +462,12 @@ tbody tr:hover td:first-child {
   }
 
   .main {
-    padding: 10px;
+    padding: 10px 10px 0;
   }
 
   .tableWrap {
-    max-height: calc(100dvh - 280px);
+    height: 100%;
+    max-height: none;
     border-radius: 12px;
   }
 
@@ -548,6 +557,36 @@ tbody tr:hover td:first-child {
   color: var(--muted);
   font-size: 13px;
   line-height: 1.45;
+}
+
+.loading-progress-wrap {
+  margin-top: 16px;
+}
+
+.loading-progress-track {
+  width: 100%;
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.loading-progress-fill {
+  width: 0%;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, rgba(79, 140, 255, 0.88), rgba(125, 173, 255, 0.96));
+  transition: width 0.28s ease;
+}
+
+.loading-progress-meta {
+  margin-top: 8px;
+  display: flex;
+  justify-content: flex-end;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
 }
 
 .btn.is-loading {
