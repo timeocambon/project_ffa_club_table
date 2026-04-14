@@ -8,6 +8,11 @@ const sexBtn = document.getElementById("sexBtn");
 const sexMenu = document.getElementById("sexMenu");
 const resetSexFilterBtn = document.getElementById("resetSexFilter");
 const sexOptionButtons = Array.from(document.querySelectorAll("[data-sex-value]"));
+const barremeModeEl = document.getElementById("barremeMode");
+const barremeBtn = document.getElementById("barremeBtn");
+const barremeMenu = document.getElementById("barremeMenu");
+const resetBarremeModeBtn = document.getElementById("resetBarremeMode");
+const barremeOptionButtons = Array.from(document.querySelectorAll("[data-barreme-value]"));
 
 const catsBtn = document.getElementById("catsBtn");
 const catsMenu = document.getElementById("catsMenu");
@@ -67,7 +72,9 @@ clubEl.value = "";
 clubEl.removeAttribute("value");
 anneeEl.value = currentYear;
 anneeEl.placeholder = currentYear;
+if (barremeModeEl) barremeModeEl.value = "50";
 updateSexFilterUi();
+updateBarremeModeUi();
 
 let isLoading = false;
 const FETCH_TIMEOUT_MS = 180000;
@@ -90,6 +97,9 @@ let currentVisibleEvents = [];
 let barreme50 = null;
 let barreme50LoadError = null;
 const barreme50Ready = loadBarreme50();
+let barreme1000 = null;
+let barreme1000LoadError = null;
+const barreme1000Ready = loadBarreme1000();
 
 let selectedCats = new Set();
 let selectedEvtGroups = new Set();
@@ -216,6 +226,7 @@ function isMobileViewport() {
 function hideAllDropdownMenus() {
   catsMenu.classList.add("hidden");
   sexMenu.classList.add("hidden");
+  barremeMenu.classList.add("hidden");
   evtMenu.classList.add("hidden");
   absentMenu.classList.add("hidden");
   paintMenu.classList.add("hidden");
@@ -401,7 +412,7 @@ function buildCurrentSnapshot(name = "") {
   const snapshotName = String(name || saveNameEl?.value || "").trim() || getDefaultSaveName();
 
   return {
-    version: 1,
+    version: 2,
     name: snapshotName,
     savedAt: new Date().toISOString(),
     club: (clubEl.value || "").trim(),
@@ -410,6 +421,7 @@ function buildCurrentSnapshot(name = "") {
     selectedCats: [...selectedCats],
     selectedEvtGroups: [...selectedEvtGroups],
     sexFilter: sexFilterEl?.value || "all",
+    barremeMode: barremeModeEl?.value === "1000" ? "1000" : "50",
     absentNames: [...absentNames],
     absentBottom: Boolean(absentBottomToggle.checked),
     manualCellColors: { ...manualCellColors },
@@ -439,6 +451,10 @@ function restoreSnapshot(snapshot) {
   selectedEvtGroups = restoredEvtGroups;
   sexFilterEl.value = snapshot.sexFilter === "F" || snapshot.sexFilter === "M" ? snapshot.sexFilter : "all";
   updateSexFilterUi();
+  if (barremeModeEl) {
+    barremeModeEl.value = snapshot.barremeMode === "1000" ? "1000" : "50";
+    updateBarremeModeUi();
+  }
 
   absentNames = uniqAbsentNames(Array.isArray(snapshot.absentNames) ? snapshot.absentNames : []);
   absentBottomToggle.checked = snapshot.absentBottom !== false;
@@ -887,6 +903,20 @@ async function loadBarreme50() {
   }
 }
 
+async function loadBarreme1000() {
+  try {
+    const res = await fetch("./barreme1000.json", { cache: "no-store" });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    barreme1000 = await res.json();
+    return barreme1000;
+  } catch (e) {
+    console.error("Impossible de charger le barème 1000.", e);
+    barreme1000LoadError = e;
+    barreme1000 = null;
+    return null;
+  }
+}
+
 function stripAccents(s) {
   return String(s ?? "").normalize("NFD").replace(/[̀-ͯ]/g, "");
 }
@@ -965,7 +995,7 @@ function eventKeyForPoints(cat, sex, eventName) {
   return null;
 }
 
-function pointsTableFor(row, eventName) {
+function pointsTable50For(row, eventName) {
   if (!barreme50?.categories) return null;
 
   const cat = row?.cat || "";
@@ -977,10 +1007,123 @@ function pointsTableFor(row, eventName) {
   return barreme50.categories?.[cat]?.[sex]?.[eventKey] ?? null;
 }
 
-function pointsFromPerformance(row, eventName, performance) {
+function looksIndoorEvent(rawEvent) {
+  return /(salle|indoor|piste courte|piste-courte|\bpc\b|en salle|piste couverte)/i.test(
+    String(rawEvent || ""),
+  );
+}
+
+function isYouthCategory(cat) {
+  return ["Éveil", "Poussin", "Benjamin", "Minime"].includes(String(cat || ""));
+}
+
+function parseWeightFromEvent(eventName, unit) {
+  const pattern = unit === "g"
+    ? /\(([\d.,]+)\s*g\)/i
+    : /\(([\d.,]+)\s*kg\)/i;
+  const match = String(eventName || "").match(pattern);
+  if (!match) return null;
+  const value = Number(String(match[1]).replace(",", "."));
+  return Number.isFinite(value) ? value : null;
+}
+
+function closeEnough(value, target, tolerance = 0.02) {
+  return Number.isFinite(value) && Math.abs(value - target) <= tolerance;
+}
+
+function eventKeyForBarreme1000(row, eventName, bestResult) {
+  const sex = row?.sex || "";
+  if (sex !== "M" && sex !== "F") return null;
+  if (isYouthCategory(row?.cat)) return null;
+
+  const normalized = normalizeEventName(eventName);
+  let s = stripAccents(normalized).toLowerCase().trim();
+  s = s.replace(/ /g, " ");
+  s = s.replace(/\s+/g, " ").trim();
+  if (!s) return null;
+
+  const rawEvent = String(bestResult?.event || eventName || "");
+  const indoorHint = looksIndoorEvent(rawEvent);
+  const venue = indoorHint ? "indoor" : "outdoor";
+
+  if (s === "50m") return { venue: "indoor", code: "50m" };
+  if (s === "60m") return { venue: "indoor", code: "60m" };
+  if (s === "100m") return { venue: "outdoor", code: "100m" };
+
+  if (["200m", "300m", "400m", "600m", "800m", "1000m", "1500m", "2000m", "3000m", "5000m"].includes(s)) {
+    return { venue, code: s };
+  }
+
+  if (s === "10000m") return { venue: "outdoor", code: "10000m" };
+  if (s === "2000m steeple") return { venue: "outdoor", code: "2000mSC" };
+  if (s === "3000m steeple") return { venue: "outdoor", code: "3000mSC" };
+  if (s === "3000m marche") return { venue: "outdoor", code: "3kmW" };
+  if (s === "5000m marche") return { venue: "outdoor", code: "5kmW" };
+  if (s === "10000m marche") return { venue: "outdoor", code: "10kmW" };
+
+  if (/4\s*x\s*100m/.test(s)) return { venue: "outdoor", code: "4x100m" };
+  if (/4\s*x\s*200m/.test(s)) return { venue, code: "4x200m" };
+  if (/4\s*x\s*400m/.test(s)) return { venue, code: "4x400m" };
+
+  if (s === "hauteur") return { venue, code: "HJ" };
+  if (s === "perche") return { venue, code: "PV" };
+  if (s === "longueur") return { venue, code: "LJ" };
+  if (s === "triple saut") return { venue, code: "TJ" };
+
+  if (/^50m haies \(84\)$/.test(s) && sex === "F") return { venue: "indoor", code: "50mH" };
+  if (/^50m haies \(106\)$/.test(s) && sex === "M") return { venue: "indoor", code: "50mH" };
+  if (/^60m haies \(84\)$/.test(s) && sex === "F") return { venue: "indoor", code: "60mH" };
+  if (/^60m haies \(106\)$/.test(s) && sex === "M") return { venue: "indoor", code: "60mH" };
+  if (/^100m haies \(84\)$/.test(s) && sex === "F") return { venue: "outdoor", code: "100mH" };
+  if (/^110m haies \(106\)$/.test(s) && sex === "M") return { venue: "outdoor", code: "110mH" };
+  if (/^400m haies \(76\)$/.test(s) && sex === "F") return { venue: "outdoor", code: "400mH" };
+  if (/^400m haies \(91\)$/.test(s) && sex === "M") return { venue: "outdoor", code: "400mH" };
+
+  if (s.startsWith("poids ")) {
+    const kg = parseWeightFromEvent(s, "kg");
+    if (sex === "M" && closeEnough(kg, 7.26)) return { venue, code: "SP" };
+    if (sex === "F" && closeEnough(kg, 4)) return { venue, code: "SP" };
+    return null;
+  }
+
+  if (s.startsWith("disque ")) {
+    const kg = parseWeightFromEvent(s, "kg");
+    if (sex === "M" && closeEnough(kg, 2)) return { venue: "outdoor", code: "DT" };
+    if (sex === "F" && closeEnough(kg, 1)) return { venue: "outdoor", code: "DT" };
+    return null;
+  }
+
+  if (s.startsWith("marteau ")) {
+    const kg = parseWeightFromEvent(s, "kg");
+    if (sex === "M" && closeEnough(kg, 7.26)) return { venue: "outdoor", code: "HT" };
+    if (sex === "F" && closeEnough(kg, 4)) return { venue: "outdoor", code: "HT" };
+    return null;
+  }
+
+  if (s.startsWith("javelot ")) {
+    const grams = parseWeightFromEvent(s, "g");
+    if (sex === "M" && closeEnough(grams, 800, 1)) return { venue: "outdoor", code: "JT" };
+    if (sex === "F" && closeEnough(grams, 600, 1)) return { venue: "outdoor", code: "JT" };
+    return null;
+  }
+
+  return null;
+}
+
+function pointsTable1000For(row, eventName, bestResult) {
+  if (!barreme1000?.sexes) return null;
+  const spec = eventKeyForBarreme1000(row, eventName, bestResult);
+  if (!spec) return null;
+  return barreme1000.sexes?.[row.sex]?.[spec.venue]?.[spec.code] ?? null;
+}
+
+function pointsFromPerformance(row, eventName, performance, bestResult = null) {
   if (!performance) return null;
 
-  const table = pointsTableFor(row, eventName);
+  const mode = barremeModeEl?.value === "1000" ? "1000" : "50";
+  const table = mode === "1000"
+    ? pointsTable1000For(row, eventName, bestResult)
+    : pointsTable50For(row, eventName);
   if (!table || !Array.isArray(table.thresholds)) return null;
 
   const parsed = perfToComparable(performance);
@@ -1538,6 +1681,26 @@ function updateSexFilterUi() {
   });
 }
 
+function updateBarremeModeUi() {
+  const labels = {
+    "50": "Barème : 50 ▼",
+    "1000": "Barème : 1000 ▼",
+  };
+  const value = barremeModeEl?.value === "1000" ? "1000" : "50";
+  if (barremeBtn) barremeBtn.textContent = labels[value] || labels["50"];
+  barremeOptionButtons.forEach((btn) => {
+    btn.classList.toggle("is-active", (btn.dataset.barremeValue || "50") === value);
+  });
+}
+
+function setBarremeMode(value = "50") {
+  if (!barremeModeEl) return;
+  const normalized = value === "1000" ? "1000" : "50";
+  barremeModeEl.value = normalized;
+  updateBarremeModeUi();
+  applyFiltersAndSort();
+}
+
 function setSexFilter(value = "all") {
   if (!sexFilterEl) return;
   const normalized = value === "F" || value === "M" ? value : "all";
@@ -1579,6 +1742,13 @@ resetSexFilterBtn?.addEventListener("click", () => setSexFilter("all"));
 sexOptionButtons.forEach((btn) => {
   btn.addEventListener("click", () => {
     setSexFilter(btn.dataset.sexValue || "all");
+  });
+});
+barremeBtn?.addEventListener("click", () => toggleDropdownMenu(barremeMenu));
+resetBarremeModeBtn?.addEventListener("click", () => setBarremeMode("50"));
+barremeOptionButtons.forEach((btn) => {
+  btn.addEventListener("click", () => {
+    setBarremeMode(btn.dataset.barremeValue || "50");
   });
 });
 
@@ -2033,7 +2203,7 @@ function renderPivot(events, rows) {
           const list = row.perEvent.get(ev) || [];
           const best = bestResultFromList(list);
           const val = best?.performance ?? "";
-          const pts = pointsFromPerformance(row, ev, val);
+          const pts = pointsFromPerformance(row, ev, val, best);
           const performanceCellKey = buildCellKey(row, ev, "performance");
           const pointsCellKey = buildCellKey(row, ev, "points");
 
@@ -2087,7 +2257,7 @@ async function fetchData() {
 
   try {
     setLoadingProgress(12, "Préparation du chargement…");
-    await barreme50Ready;
+    await Promise.all([barreme50Ready, barreme1000Ready]);
     setLoadingProgress(22, "Connexion au serveur…");
 
     const res = await fetchJsonWithTimeout(
@@ -2157,5 +2327,9 @@ anneeEl.addEventListener("keydown", (e) => {
 });
 sexFilterEl.addEventListener("change", () => {
   updateSexFilterUi();
+  applyFiltersAndSort();
+});
+barremeModeEl?.addEventListener("change", () => {
+  updateBarremeModeUi();
   applyFiltersAndSort();
 });

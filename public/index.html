@@ -78,6 +78,25 @@
             </select>
           </div>
 
+
+          <div class="dropdown">
+            <button id="barremeBtn" class="btn secondary" type="button">Barème : 50 ▼</button>
+            <div id="barremeMenu" class="dropdown-menu sex-menu hidden">
+              <div class="dropdown-actions">
+                <strong>Barème</strong>
+                <button id="resetBarremeMode" type="button">50</button>
+              </div>
+              <div class="sex-options">
+                <button type="button" class="sex-option is-active" data-barreme-value="50">Barème 50</button>
+                <button type="button" class="sex-option" data-barreme-value="1000">Barème 1000</button>
+              </div>
+            </div>
+            <select id="barremeMode" class="visually-hidden" aria-hidden="true" tabindex="-1">
+              <option value="50">Barème 50</option>
+              <option value="1000">Barème 1000</option>
+            </select>
+          </div>
+
           <!-- Dropdown groupes d’épreuves -->
           <div class="dropdown">
             <button id="evtBtn" class="btn secondary">Épreuves ▼</button>
