@@ -66,7 +66,7 @@ anneeEl.placeholder = currentYear;
 updateSexFilterUi();
 
 let isLoading = false;
-const FETCH_TIMEOUT_MS = 45000;
+const FETCH_TIMEOUT_MS = 180000;
 
 let rawResults = [];
 let pivoted = null;

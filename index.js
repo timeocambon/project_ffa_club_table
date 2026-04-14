@@ -24,7 +24,7 @@ async function getBrowser() {
 
 const cache = new Map();
 const CACHE_MS = 5 * 60 * 1000; // 5 minutes
-const SCRAPE_TIMEOUT_MS = 45000;
+const SCRAPE_TIMEOUT_MS = 180000;
 
 /* =========================
    ROUTE API
@@ -999,4 +999,7 @@ const PORT = process.env.PORT || 3001;
 
 app.listen(PORT, () => {
   console.log(`API on port ${PORT}`);
+  getBrowser().catch((err) => {
+    console.error("Préchargement Playwright échoué :", err);
+  });
 });
