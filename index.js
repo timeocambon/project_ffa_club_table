@@ -1,5 +1,4 @@
 import express from "express";
-import cors from "cors";
 import { chromium } from "playwright";
 import * as cheerio from "cheerio";
 import { pathToFileURL } from "node:url";
@@ -9,6 +8,24 @@ const CACHE_MAX_ENTRIES = 100;
 const SCRAPE_TIMEOUT_MS = 180000;
 const MIN_RESULTS_YEAR = 2000;
 const MAX_RESULTS_PAGES = 20;
+const SECURITY_HEADERS = Object.freeze({
+  "Content-Security-Policy": [
+    "default-src 'self'",
+    "script-src 'self'",
+    "style-src 'self' 'unsafe-inline'",
+    "connect-src 'self'",
+    "img-src 'self' data:",
+    "font-src 'self'",
+    "object-src 'none'",
+    "base-uri 'none'",
+    "frame-ancestors 'none'",
+    "form-action 'self'",
+  ].join("; "),
+  "Permissions-Policy": "camera=(), geolocation=(), microphone=()",
+  "Referrer-Policy": "no-referrer",
+  "X-Content-Type-Options": "nosniff",
+  "X-Frame-Options": "DENY",
+});
 
 let browserPromise = null;
 
@@ -276,7 +293,15 @@ async function scrapeBilans({ club, annee, debug }) {
 const loadBilans = createBilansLoader({ scrape: scrapeBilans });
 const app = express();
 
-app.use(cors());
+function applySecurityHeaders(_req, res, next) {
+  for (const [name, value] of Object.entries(SECURITY_HEADERS)) {
+    res.setHeader(name, value);
+  }
+  next();
+}
+
+app.disable("x-powered-by");
+app.use(applySecurityHeaders);
 app.use(express.static("public"));
 
 /* =========================
@@ -1129,6 +1154,7 @@ const PORT = process.env.PORT || 3001;
 
 export {
   app,
+  applySecurityHeaders,
   closeBrowser,
   createBilansLoader,
   eventCategory,

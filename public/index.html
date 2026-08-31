@@ -3,6 +3,10 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta
+      name="description"
+      content="Consulte et compare les meilleures performances des athlètes d'un club FFA."
+    />
     <title>Bilans Club</title>
     <link rel="stylesheet" href="./styles.css" />
   </head>
@@ -17,8 +21,12 @@
             type="text"
             placeholder="Numéro du club"
             maxlength="6"
+            inputmode="numeric"
+            pattern="[0-9]{6}"
+            aria-describedby="clubHint"
             autocomplete="off"
           />
+          <span id="clubHint" class="visually-hidden">Saisis les 6 chiffres du numéro de club.</span>
         </div>
 
         <div class="field">
@@ -29,10 +37,13 @@
             placeholder="Année en cours"
             maxlength="4"
             inputmode="numeric"
+            pattern="[0-9]{4}"
+            aria-describedby="anneeHint"
           />
+          <span id="anneeHint" class="visually-hidden">Saisis une année sur 4 chiffres à partir de 2000.</span>
         </div>
 
-        <button id="btnFetch" class="btn">Charger</button>
+        <button id="btnFetch" class="btn" type="button">Charger</button>
         <button
           id="mobileOptionsToggle"
           class="btn secondary mobile-only"
@@ -48,19 +59,19 @@
 
           <!-- Dropdown catégories -->
           <div class="dropdown">
-            <button id="catsBtn" class="btn secondary">Catégories ▼</button>
-            <div id="catsMenu" class="dropdown-menu hidden">
+            <button id="catsBtn" class="btn secondary" type="button" aria-expanded="false" aria-controls="catsMenu">Catégories ▼</button>
+            <div id="catsMenu" class="dropdown-menu hidden" role="group" aria-labelledby="catsBtn" aria-hidden="true">
               <div class="dropdown-actions">
-                <button id="selectAllCats">Tout</button>
-                <button id="clearCats">Effacer</button>
+                <button id="selectAllCats" type="button">Tout</button>
+                <button id="clearCats" type="button">Effacer</button>
               </div>
               <div id="catsList" class="dropdown-list"></div>
             </div>
           </div>
 
           <div class="dropdown">
-            <button id="sexBtn" class="btn secondary" type="button">Sexe : Tous ▼</button>
-            <div id="sexMenu" class="dropdown-menu sex-menu hidden">
+            <button id="sexBtn" class="btn secondary" type="button" aria-expanded="false" aria-controls="sexMenu">Sexe : Tous ▼</button>
+            <div id="sexMenu" class="dropdown-menu sex-menu hidden" role="group" aria-labelledby="sexBtn" aria-hidden="true">
               <div class="dropdown-actions">
                 <strong>Sexe</strong>
                 <button id="resetSexFilter" type="button">Tous</button>
@@ -80,8 +91,8 @@
 
 
           <div class="dropdown">
-            <button id="barremeBtn" class="btn secondary" type="button">Barème : 50 ▼</button>
-            <div id="barremeMenu" class="dropdown-menu sex-menu hidden">
+            <button id="barremeBtn" class="btn secondary" type="button" aria-expanded="false" aria-controls="barremeMenu">Barème : 50 ▼</button>
+            <div id="barremeMenu" class="dropdown-menu sex-menu hidden" role="group" aria-labelledby="barremeBtn" aria-hidden="true">
               <div class="dropdown-actions">
                 <strong>Barème</strong>
                 <button id="resetBarremeMode" type="button">50</button>
@@ -99,11 +110,11 @@
 
           <!-- Dropdown groupes d’épreuves -->
           <div class="dropdown">
-            <button id="evtBtn" class="btn secondary">Épreuves ▼</button>
-            <div id="evtMenu" class="dropdown-menu hidden">
+            <button id="evtBtn" class="btn secondary" type="button" aria-expanded="false" aria-controls="evtMenu">Épreuves ▼</button>
+            <div id="evtMenu" class="dropdown-menu hidden" role="group" aria-labelledby="evtBtn" aria-hidden="true">
               <div class="dropdown-actions">
-                <button id="selectAllEvt">Tout</button>
-                <button id="clearEvt">Effacer</button>
+                <button id="selectAllEvt" type="button">Tout</button>
+                <button id="clearEvt" type="button">Effacer</button>
               </div>
               <div id="evtList" class="dropdown-list"></div>
             </div>
@@ -111,11 +122,11 @@
 
           <!-- Gestion des absents -->
           <div class="dropdown">
-            <button id="absentBtn" class="btn secondary">Absents ▼</button>
-            <div id="absentMenu" class="dropdown-menu absent-menu hidden">
+            <button id="absentBtn" class="btn secondary" type="button" aria-expanded="false" aria-controls="absentMenu">Absents ▼</button>
+            <div id="absentMenu" class="dropdown-menu absent-menu hidden" role="group" aria-labelledby="absentBtn" aria-hidden="true">
               <div class="dropdown-actions">
                 <strong>Absents</strong>
-                <button id="clearAbsentList">Effacer</button>
+                <button id="clearAbsentList" type="button">Effacer</button>
               </div>
               <div class="absent-field">
                 <span>Liste des absents</span>
@@ -130,11 +141,11 @@
           </div>
 
           <div class="dropdown">
-            <button id="paintBtn" class="btn secondary">Couleurs ▼</button>
-            <div id="paintMenu" class="dropdown-menu paint-menu hidden">
+            <button id="paintBtn" class="btn secondary" type="button" aria-expanded="false" aria-controls="paintMenu">Couleurs ▼</button>
+            <div id="paintMenu" class="dropdown-menu paint-menu hidden" role="group" aria-labelledby="paintBtn" aria-hidden="true">
               <div class="dropdown-actions">
                 <strong>Couleurs</strong>
-                <button id="clearCellColors">Tout effacer</button>
+                <button id="clearCellColors" type="button">Tout effacer</button>
               </div>
               <button id="clearSelectedCell" class="paint-action-btn" type="button" disabled>Effacer la case sélectionnée</button>
               <div class="paint-toolbar">
@@ -148,8 +159,8 @@
           </div>
 
           <div class="dropdown">
-            <button id="saveBtn" class="btn secondary">Sauvegardes ▼</button>
-            <div id="saveMenu" class="dropdown-menu save-menu hidden">
+            <button id="saveBtn" class="btn secondary" type="button" aria-expanded="false" aria-controls="saveMenu">Sauvegardes ▼</button>
+            <div id="saveMenu" class="dropdown-menu save-menu hidden" role="group" aria-labelledby="saveBtn" aria-hidden="true">
               <div class="dropdown-actions">
                 <strong>Sauvegardes</strong>
                 <button id="saveRefreshList" type="button">Actualiser</button>
@@ -178,13 +189,18 @@
             </div>
           </div>
         </div>
+
+        <div class="status" role="status" aria-live="polite" aria-atomic="true">
+          <span id="statusText">Prêt</span>
+          <span id="countBadge" class="badge" hidden aria-hidden="true"></span>
+        </div>
       </div>
     </header>
 
     <main class="main">
       <div id="loadingOverlay" class="loading-overlay hidden" aria-hidden="true">
         <div class="loading-card" role="status" aria-live="polite">
-          <div class="loading-spinner"></div>
+          <div class="loading-spinner" aria-hidden="true"></div>
           <div id="loadingTitle" class="loading-title">Chargement des résultats…</div>
           <div id="loadingSubtitle" class="loading-subtitle">Préparation de la récupération du club…</div>
           <div class="loading-progress-wrap" aria-hidden="true">
@@ -203,7 +219,8 @@
       </div>
 
       <div class="tableWrap">
-        <table id="tbl">
+        <table id="tbl" aria-describedby="pointsLegend">
+          <caption class="visually-hidden">Meilleures performances des athlètes du club, avec points par épreuve.</caption>
           <thead id="thead"></thead>
           <tbody id="tbody">
             <tr>
@@ -212,7 +229,7 @@
           </tbody>
         </table>
       </div>
-      <p class="points-legend">
+      <p id="pointsLegend" class="points-legend">
         <strong>N/D</strong> : aucun barème disponible pour cette épreuve,
         cette catégorie ou ce sexe.
       </p>

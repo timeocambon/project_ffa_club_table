@@ -61,6 +61,17 @@ const sortOrderSelect = document.getElementById("sortOrderSelect");
 const sortApplyBtn = document.getElementById("sortApplyBtn");
 const sortResetBtn = document.getElementById("sortResetBtn");
 
+const dropdownPairs = [
+  [catsBtn, catsMenu],
+  [sexBtn, sexMenu],
+  [barremeBtn, barremeMenu],
+  [evtBtn, evtMenu],
+  [absentBtn, absentMenu],
+  [paintBtn, paintMenu],
+  [saveBtn, saveMenu],
+  [sortBtn, sortMenu],
+].filter(([button, menu]) => button && menu);
+
 const thead = document.getElementById("thead");
 const tbody = document.getElementById("tbody");
 const statusText = document.getElementById("statusText");
@@ -137,9 +148,11 @@ function setStatus(text, count = null) {
   statusText.textContent = text;
   if (typeof count === "number") {
     countBadge.hidden = false;
+    countBadge.setAttribute("aria-hidden", "false");
     countBadge.textContent = String(count);
   } else {
     countBadge.hidden = true;
+    countBadge.setAttribute("aria-hidden", "true");
   }
 }
 
@@ -229,15 +242,17 @@ function isMobileViewport() {
   return window.matchMedia("(max-width: 768px)").matches;
 }
 
+function syncDropdownAria() {
+  dropdownPairs.forEach(([button, menu]) => {
+    const isOpen = !menu.classList.contains("hidden");
+    button.setAttribute("aria-expanded", String(isOpen));
+    menu.setAttribute("aria-hidden", String(!isOpen));
+  });
+}
+
 function hideAllDropdownMenus() {
-  catsMenu.classList.add("hidden");
-  sexMenu.classList.add("hidden");
-  barremeMenu.classList.add("hidden");
-  evtMenu.classList.add("hidden");
-  absentMenu.classList.add("hidden");
-  paintMenu.classList.add("hidden");
-  saveMenu.classList.add("hidden");
-  sortMenu?.classList.add("hidden");
+  dropdownPairs.forEach(([, menu]) => menu.classList.add("hidden"));
+  syncDropdownAria();
 }
 
 function renderMobileOptionsState() {
@@ -268,11 +283,19 @@ function toggleDropdownMenu(menuEl) {
   const shouldOpen = menuEl.classList.contains("hidden");
   hideAllDropdownMenus();
   menuEl.classList.toggle("hidden", !shouldOpen);
+  syncDropdownAria();
 }
 
 
 function validClub(s) {
   return /^\d{6}$/.test((s || "").trim());
+}
+
+function validYear(s) {
+  const normalized = (s || "").trim();
+  if (!/^\d{4}$/.test(normalized)) return false;
+  const year = Number(normalized);
+  return year >= 2000 && year <= Number(currentYear) + 1;
 }
 
 function escapeHtml(s) {
@@ -546,7 +569,9 @@ function setActivePaintColor(color) {
   updatePaintButtonLabel();
 
   paintSwatches.forEach((btn) => {
-    btn.classList.toggle("is-active", btn.dataset.paintColor === activePaintColor);
+    const isActive = btn.dataset.paintColor === activePaintColor;
+    btn.classList.toggle("is-active", isActive);
+    btn.setAttribute("aria-pressed", String(isActive));
   });
 
   document.body.classList.toggle("paint-mode", activePaintColor !== "none");
@@ -1558,7 +1583,9 @@ function updateSexFilterUi() {
   const value = sexFilterEl?.value || "all";
   if (sexBtn) sexBtn.textContent = labels[value] || labels.all;
   sexOptionButtons.forEach((btn) => {
-    btn.classList.toggle("is-active", (btn.dataset.sexValue || "all") === value);
+    const isActive = (btn.dataset.sexValue || "all") === value;
+    btn.classList.toggle("is-active", isActive);
+    btn.setAttribute("aria-pressed", String(isActive));
   });
 }
 
@@ -1570,7 +1597,9 @@ function updateBarremeModeUi() {
   const value = barremeModeEl?.value === "1000" ? "1000" : "50";
   if (barremeBtn) barremeBtn.textContent = labels[value] || labels["50"];
   barremeOptionButtons.forEach((btn) => {
-    btn.classList.toggle("is-active", (btn.dataset.barremeValue || "50") === value);
+    const isActive = (btn.dataset.barremeValue || "50") === value;
+    btn.classList.toggle("is-active", isActive);
+    btn.setAttribute("aria-pressed", String(isActive));
   });
 }
 
@@ -1817,7 +1846,16 @@ document.addEventListener("click", (e) => {
 window.addEventListener("scroll", hideAthleteContextMenu, true);
 window.addEventListener("resize", hideAthleteContextMenu);
 document.addEventListener("keydown", (e) => {
-  if (e.key === "Escape") hideAthleteContextMenu();
+  if (e.key !== "Escape") return;
+
+  const openDropdown = dropdownPairs.find(([, menu]) => !menu.classList.contains("hidden"));
+  hideAllDropdownMenus();
+  hideAthleteContextMenu();
+
+  if (openDropdown) {
+    e.preventDefault();
+    openDropdown[0].focus();
+  }
 });
 
 /* =========================
@@ -1933,15 +1971,39 @@ function cycleSortFor(col) {
 }
 
 function attachHeaderClicks() {
-  thead.querySelectorAll("th").forEach((th) => {
-    const col = th.getAttribute("data-col");
-    if (!col) return;
-    th.style.cursor = "pointer";
-    th.addEventListener("click", () => {
+  thead.querySelectorAll("button[data-col]").forEach((button) => {
+    const col = button.getAttribute("data-col");
+    button.addEventListener("click", () => {
       cycleSortFor(col);
       applyFiltersAndSort();
     });
   });
+}
+
+function sortDirectionFor(col) {
+  if (sortState.col !== col) return "none";
+  return sortState.mode === "desc" || sortState.mode === "worst"
+    ? "descending"
+    : "ascending";
+}
+
+function sortIndicatorFor(col) {
+  const direction = sortDirectionFor(col);
+  if (direction === "ascending") return "▲";
+  if (direction === "descending") return "▼";
+  return "↕";
+}
+
+function renderSortableHeader(col, label) {
+  const safeCol = escapeHtml(col);
+  const safeLabel = escapeHtml(label);
+  return `
+    <th scope="col" data-col="${safeCol}" aria-sort="${sortDirectionFor(col)}">
+      <button class="sort-header-button" type="button" data-col="${safeCol}" title="Trier par ${safeLabel}">
+        ${safeLabel} <span aria-hidden="true">${sortIndicatorFor(col)}</span>
+      </button>
+    </th>
+  `;
 }
 
 /* =========================
@@ -2048,12 +2110,12 @@ function applyFiltersAndSort() {
 
 function renderPivot(events, rows) {
   const headerCells = [
-    `<th data-col="athlete">Nom / Prénom</th>`,
-    `<th data-col="cat">Catégorie</th>`,
-    `<th data-col="sex">Sexe</th>`,
+    renderSortableHeader("athlete", "Nom / Prénom"),
+    renderSortableHeader("cat", "Catégorie"),
+    renderSortableHeader("sex", "Sexe"),
     ...events.flatMap((e) => [
-      `<th data-col="${escapeHtml(e)}">${escapeHtml(e)}</th>`,
-      `<th class="points-header">Pts</th>`,
+      renderSortableHeader(e, e),
+      `<th scope="col" class="points-header" aria-label="Points pour ${escapeHtml(e)}">Pts</th>`,
     ]),
   ].join("");
 
@@ -2134,10 +2196,24 @@ async function fetchData() {
   const annee = (anneeEl.value || currentYear).trim();
 
   if (!validClub(club)) {
+    clubEl.setAttribute("aria-invalid", "true");
+    clubEl.focus();
     setStatus("Club invalide (6 chiffres).");
     tbody.innerHTML = `<tr><td class="empty">Entre un numéro de club valide.</td></tr>`;
     return;
   }
+
+  clubEl.removeAttribute("aria-invalid");
+
+  if (!validYear(annee)) {
+    anneeEl.setAttribute("aria-invalid", "true");
+    anneeEl.focus();
+    setStatus(`Année invalide (entre 2000 et ${Number(currentYear) + 1}).`);
+    tbody.innerHTML = `<tr><td class="empty">Entre une année valide sur 4 chiffres.</td></tr>`;
+    return;
+  }
+
+  anneeEl.removeAttribute("aria-invalid");
 
   syncCellColorsForCurrentDataset();
   setLoading(true, "Chargement des résultats…");
@@ -2201,11 +2277,14 @@ setActivePaintColor("none");
 
 renderMobileOptionsState();
 syncSortMenuControls();
+syncDropdownAria();
 
 mobileOptionsToggle?.addEventListener("click", toggleMobileOptionsPanel);
 window.addEventListener("resize", renderMobileOptionsState);
 
 btnFetch.addEventListener("click", fetchData);
+clubEl.addEventListener("input", () => clubEl.removeAttribute("aria-invalid"));
+anneeEl.addEventListener("input", () => anneeEl.removeAttribute("aria-invalid"));
 clubEl.addEventListener("keydown", (e) => {
   if (e.key === "Enter") fetchData();
 });

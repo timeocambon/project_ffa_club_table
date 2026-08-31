@@ -124,7 +124,31 @@ test(
       page.on("pageerror", (error) => errors.push(String(error)));
 
       await page.goto(`http://127.0.0.1:${address.port}/`);
-      await page.getByRole("textbox", { name: "Club" }).fill("081061");
+      const clubInput = page.getByRole("textbox", { name: "Club" });
+      const yearInput = page.getByRole("textbox", { name: "Année" });
+      const loadButton = page.getByRole("button", { name: "Charger" });
+
+      await clubInput.fill("12");
+      await loadButton.click();
+      assert.equal(await clubInput.getAttribute("aria-invalid"), "true");
+      await page.getByText("Club invalide (6 chiffres).").waitFor();
+
+      await clubInput.fill("081061");
+      await yearInput.fill("1999");
+      await loadButton.click();
+      assert.equal(await yearInput.getAttribute("aria-invalid"), "true");
+      await page.getByText(/Année invalide/).waitFor();
+
+      const categoriesButton = page.getByRole("button", { name: /Catégories/ });
+      assert.equal(await categoriesButton.getAttribute("aria-expanded"), "false");
+      await categoriesButton.click();
+      assert.equal(await categoriesButton.getAttribute("aria-expanded"), "true");
+      assert.equal(await page.locator("#catsMenu").getAttribute("aria-hidden"), "false");
+      await page.keyboard.press("Escape");
+      assert.equal(await categoriesButton.getAttribute("aria-expanded"), "false");
+      assert.equal(await page.evaluate(() => document.activeElement?.id), "catsBtn");
+
+      await yearInput.fill("2026");
       await page.getByRole("button", { name: "Charger" }).click();
 
       const routeRow = page.getByRole("row", { name: /DUPONT Alice/ });
@@ -139,12 +163,32 @@ test(
         await page.locator(".points-legend").innerText(),
         /aucun barème disponible/i,
       );
+      assert.match(await page.locator("#statusText").innerText(), /OK — lignes: 2/);
+
+      const athleteHeader = page.locator('th[data-col="athlete"]');
+      assert.equal(await athleteHeader.getAttribute("aria-sort"), "ascending");
+      await page.getByRole("button", { name: /Nom \/ Prénom/ }).press("Enter");
+      assert.equal(await athleteHeader.getAttribute("aria-sort"), "descending");
+      assert.match(await page.locator("#tbody tr").first().innerText(), /MARTIN Lea/);
+
+      await page.getByRole("button", { name: /Sexe : Tous/ }).click();
+      const womenButton = page.getByRole("button", { name: "Femmes", exact: true });
+      await womenButton.click();
+      assert.equal(await womenButton.getAttribute("aria-pressed"), "true");
 
       await page.getByRole("textbox", { name: "Club" }).fill("999999");
       await page.getByRole("button", { name: "Charger" }).click();
       await page.getByText(
         "Erreur: Impossible de récupérer les résultats depuis Athlé.fr.",
       ).waitFor();
+
+      await page.setViewportSize({ width: 390, height: 844 });
+      await page.reload();
+      const optionsButton = page.getByRole("button", { name: /Options/ });
+      assert.equal(await optionsButton.getAttribute("aria-expanded"), "false");
+      await optionsButton.click();
+      assert.equal(await optionsButton.getAttribute("aria-expanded"), "true");
+      await page.locator("#mobileOptionsPanel").waitFor({ state: "visible" });
       assert.deepEqual(errors, []);
     } finally {
       if (browser) await browser.close();

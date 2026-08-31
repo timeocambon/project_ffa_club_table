@@ -2,6 +2,8 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  app,
+  applySecurityHeaders,
   createBilansLoader,
   eventCategory,
   eventType,
@@ -13,6 +15,26 @@ import {
   parseSummaryLine,
   withTimeout,
 } from "../index.js";
+
+test("applique des en-têtes HTTP restrictifs sans exposer Express", () => {
+  const headers = new Map();
+  let nextCalled = false;
+  applySecurityHeaders(
+    {},
+    { setHeader: (name, value) => headers.set(name, value) },
+    () => {
+      nextCalled = true;
+    },
+  );
+
+  assert.equal(nextCalled, true);
+  assert.match(headers.get("Content-Security-Policy"), /script-src 'self'/);
+  assert.match(headers.get("Content-Security-Policy"), /frame-ancestors 'none'/);
+  assert.equal(headers.get("X-Content-Type-Options"), "nosniff");
+  assert.equal(headers.get("X-Frame-Options"), "DENY");
+  assert.equal(headers.get("Referrer-Policy"), "no-referrer");
+  assert.equal(app.enabled("x-powered-by"), false);
+});
 
 test("valide le club et l'année avant toute récupération", () => {
   assert.deepEqual(
