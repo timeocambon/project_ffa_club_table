@@ -24,6 +24,7 @@ const FIXED_BARREME_50_EVENTS = new Set([
   "3000m",
   "1500m_steeple",
   "2000m_steeple",
+  "1000m_marche",
   "2000m_marche",
   "3000m_marche",
   "4x60m",
@@ -87,6 +88,17 @@ const BARREME_1000_EVENTS = new Set([
   "DT",
   "HT",
   "JT",
+  "MileRoad",
+  "5kmRoad",
+  "10kmRoad",
+  "15kmRoad",
+  "10MilesRoad",
+  "20kmRoad",
+  "HalfMarathon",
+  "25kmRoad",
+  "30kmRoad",
+  "Marathon",
+  "100kmRoad",
 ]);
 
 function readJson(path, label) {
@@ -119,6 +131,13 @@ function validateTable(table, label) {
 
   if (table.type !== "time" && table.type !== "dist") {
     errors.push(`${label}: type inconnu ${String(table.type)}`);
+  }
+
+  if (
+    table.floorPoints != null &&
+    (!Number.isInteger(table.floorPoints) || table.floorPoints <= 0)
+  ) {
+    errors.push(`${label}: minimum de points invalide`);
   }
 
   if (!Array.isArray(table.thresholds) || table.thresholds.length === 0) {
@@ -160,6 +179,15 @@ function validateTable(table, label) {
     }
   }
 
+  const lowestThresholdPoints = table.thresholds.at(-1)?.points;
+  if (
+    Number.isInteger(table.floorPoints) &&
+    Number.isInteger(lowestThresholdPoints) &&
+    table.floorPoints >= lowestThresholdPoints
+  ) {
+    errors.push(`${label}: le minimum doit être inférieur au dernier seuil`);
+  }
+
   return { tables: 1, thresholds: table.thresholds.length };
 }
 
@@ -178,6 +206,7 @@ function validateBarreme50(root) {
   }
 
   exactKeys("barème 50.categories", root.categories, [
+    "Poussin",
     "Benjamin",
     "Minime",
     "Cadet",
@@ -225,7 +254,10 @@ function validateBarreme50(root) {
 
 function validateBarreme1000(root) {
   if (!root) return { tables: 0, thresholds: 0 };
-  if (typeof root.source !== "string" || !root.source.trim()) {
+  if (
+    (!root.source || typeof root.source !== "object") &&
+    (typeof root.source !== "string" || !root.source.trim())
+  ) {
     errors.push("barème 1000: source absente");
   }
 
@@ -271,10 +303,10 @@ const barreme1000 = readJson(BARREME_1000_PATH, "barème 1000");
 const totals50 = validateBarreme50(barreme50);
 const totals1000 = validateBarreme1000(barreme1000);
 
-expectTotals("barème 50", totals50, { tables: 120, thresholds: 6000 });
+expectTotals("barème 50", totals50, { tables: 152, thresholds: 6288 });
 expectTotals("barème 1000", totals1000, {
-  tables: 98,
-  thresholds: 115781,
+  tables: 120,
+  thresholds: 145152,
 });
 
 if (errors.length > 0) {

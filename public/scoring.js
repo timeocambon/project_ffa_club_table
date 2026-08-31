@@ -136,6 +136,14 @@ export function pointsResultFromTable(table, performance, mode = "50") {
     }
   }
 
+  if (
+    bestPoints == null &&
+    Number.isInteger(table.floorPoints) &&
+    table.floorPoints > 0
+  ) {
+    bestPoints = table.floorPoints;
+  }
+
   return {
     points: bestPoints,
     status: bestPoints == null ? "out-of-range" : "ok",

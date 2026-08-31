@@ -63,7 +63,7 @@
             },
             {
               "points": 36,
-              "value": 7.0
+              "value": 7
             },
             {
               "points": 35,
@@ -332,7 +332,7 @@
             },
             {
               "points": 20,
-              "value": 9.0
+              "value": 9
             },
             {
               "points": 19,
@@ -525,7 +525,7 @@
             },
             {
               "points": 23,
-              "value": 14.0
+              "value": 14
             },
             {
               "points": 22,
@@ -903,7 +903,7 @@
             },
             {
               "points": 31,
-              "value": 44.0
+              "value": 44
             },
             {
               "points": 30,
@@ -1007,7 +1007,7 @@
             },
             {
               "points": 5,
-              "value": 57.0
+              "value": 57
             },
             {
               "points": 4,
@@ -1019,7 +1019,7 @@
             },
             {
               "points": 2,
-              "value": 59.0
+              "value": 59
             },
             {
               "points": 1,
@@ -1152,7 +1152,7 @@
             },
             {
               "points": 20,
-              "value": 67.0
+              "value": 67
             },
             {
               "points": 19,
@@ -1237,7 +1237,7 @@
           "thresholds": [
             {
               "points": 50,
-              "value": 125.0
+              "value": 125
             },
             {
               "points": 49,
@@ -1257,7 +1257,7 @@
             },
             {
               "points": 45,
-              "value": 132.0
+              "value": 132
             },
             {
               "points": 44,
@@ -1357,7 +1357,7 @@
             },
             {
               "points": 20,
-              "value": 164.0
+              "value": 164
             },
             {
               "points": 19,
@@ -1433,7 +1433,7 @@
             },
             {
               "points": 1,
-              "value": 226.0
+              "value": 226
             }
           ]
         },
@@ -1462,7 +1462,7 @@
             },
             {
               "points": 45,
-              "value": 277.0
+              "value": 277
             },
             {
               "points": 44,
@@ -1482,7 +1482,7 @@
             },
             {
               "points": 40,
-              "value": 289.0
+              "value": 289
             },
             {
               "points": 39,
@@ -1502,7 +1502,7 @@
             },
             {
               "points": 35,
-              "value": 301.0
+              "value": 301
             },
             {
               "points": 34,
@@ -1522,7 +1522,7 @@
             },
             {
               "points": 30,
-              "value": 313.0
+              "value": 313
             },
             {
               "points": 29,
@@ -1542,7 +1542,7 @@
             },
             {
               "points": 25,
-              "value": 325.0
+              "value": 325
             },
             {
               "points": 24,
@@ -1562,7 +1562,7 @@
             },
             {
               "points": 20,
-              "value": 337.0
+              "value": 337
             },
             {
               "points": 19,
@@ -1638,7 +1638,7 @@
             },
             {
               "points": 1,
-              "value": 476.0
+              "value": 476
             }
           ]
         },
@@ -1667,7 +1667,7 @@
             },
             {
               "points": 45,
-              "value": 615.0
+              "value": 615
             },
             {
               "points": 44,
@@ -1767,7 +1767,7 @@
             },
             {
               "points": 20,
-              "value": 732.0
+              "value": 732
             },
             {
               "points": 19,
@@ -1843,7 +1843,7 @@
             },
             {
               "points": 1,
-              "value": 999.0
+              "value": 999
             }
           ]
         },
@@ -2394,7 +2394,7 @@
             },
             {
               "points": 17,
-              "value": 19.0
+              "value": 19
             },
             {
               "points": 16,
@@ -2897,7 +2897,7 @@
             },
             {
               "points": 45,
-              "value": 309.0
+              "value": 309
             },
             {
               "points": 44,
@@ -2997,7 +2997,7 @@
             },
             {
               "points": 20,
-              "value": 346.0
+              "value": 346
             },
             {
               "points": 19,
@@ -3073,7 +3073,7 @@
             },
             {
               "points": 1,
-              "value": 449.0
+              "value": 449
             }
           ]
         },
@@ -3102,7 +3102,7 @@
             },
             {
               "points": 45,
-              "value": 454.0
+              "value": 454
             },
             {
               "points": 44,
@@ -3122,7 +3122,7 @@
             },
             {
               "points": 40,
-              "value": 463.0
+              "value": 463
             },
             {
               "points": 39,
@@ -3142,7 +3142,7 @@
             },
             {
               "points": 35,
-              "value": 472.0
+              "value": 472
             },
             {
               "points": 34,
@@ -3162,7 +3162,7 @@
             },
             {
               "points": 30,
-              "value": 481.0
+              "value": 481
             },
             {
               "points": 29,
@@ -3182,7 +3182,7 @@
             },
             {
               "points": 25,
-              "value": 490.0
+              "value": 490
             },
             {
               "points": 24,
@@ -3202,7 +3202,7 @@
             },
             {
               "points": 20,
-              "value": 499.0
+              "value": 499
             },
             {
               "points": 19,
@@ -3278,7 +3278,7 @@
             },
             {
               "points": 1,
-              "value": 595.0
+              "value": 595
             }
           ]
         },
@@ -3483,7 +3483,7 @@
             },
             {
               "points": 1,
-              "value": 1.0
+              "value": 1
             }
           ]
         },
@@ -4006,7 +4006,7 @@
             },
             {
               "points": 24,
-              "value": 10.0
+              "value": 10
             },
             {
               "points": 23,
@@ -4927,27 +4927,27 @@
           "thresholds": [
             {
               "points": 50,
-              "value": 810.0
+              "value": 810
             },
             {
               "points": 49,
-              "value": 826.0
+              "value": 826
             },
             {
               "points": 48,
-              "value": 842.0
+              "value": 842
             },
             {
               "points": 47,
-              "value": 858.0
+              "value": 858
             },
             {
               "points": 46,
-              "value": 874.0
+              "value": 874
             },
             {
               "points": 45,
-              "value": 890.0
+              "value": 890
             },
             {
               "points": 44,
@@ -5047,7 +5047,7 @@
             },
             {
               "points": 20,
-              "value": 1101.0
+              "value": 1101
             },
             {
               "points": 19,
@@ -5123,7 +5123,7 @@
             },
             {
               "points": 1,
-              "value": 1672.0
+              "value": 1672
             }
           ]
         },
@@ -5212,7 +5212,7 @@
             },
             {
               "points": 30,
-              "value": 52.0
+              "value": 52
             },
             {
               "points": 29,
@@ -6745,7 +6745,7 @@
             },
             {
               "points": 6,
-              "value": 72.0
+              "value": 72
             },
             {
               "points": 5,
@@ -6794,7 +6794,7 @@
             },
             {
               "points": 45,
-              "value": 113.0
+              "value": 113
             },
             {
               "points": 44,
@@ -6814,7 +6814,7 @@
             },
             {
               "points": 40,
-              "value": 117.0
+              "value": 117
             },
             {
               "points": 39,
@@ -6834,7 +6834,7 @@
             },
             {
               "points": 35,
-              "value": 121.0
+              "value": 121
             },
             {
               "points": 34,
@@ -6854,7 +6854,7 @@
             },
             {
               "points": 30,
-              "value": 125.0
+              "value": 125
             },
             {
               "points": 29,
@@ -6874,7 +6874,7 @@
             },
             {
               "points": 25,
-              "value": 129.0
+              "value": 129
             },
             {
               "points": 24,
@@ -6894,7 +6894,7 @@
             },
             {
               "points": 20,
-              "value": 133.0
+              "value": 133
             },
             {
               "points": 19,
@@ -6970,7 +6970,7 @@
             },
             {
               "points": 1,
-              "value": 176.0
+              "value": 176
             }
           ]
         },
@@ -6999,107 +6999,107 @@
             },
             {
               "points": 45,
-              "value": 236.0
+              "value": 236
             },
             {
               "points": 44,
-              "value": 238.0
+              "value": 238
             },
             {
               "points": 43,
-              "value": 240.0
+              "value": 240
             },
             {
               "points": 42,
-              "value": 242.0
+              "value": 242
             },
             {
               "points": 41,
-              "value": 244.0
+              "value": 244
             },
             {
               "points": 40,
-              "value": 246.0
+              "value": 246
             },
             {
               "points": 39,
-              "value": 248.0
+              "value": 248
             },
             {
               "points": 38,
-              "value": 250.0
+              "value": 250
             },
             {
               "points": 37,
-              "value": 252.0
+              "value": 252
             },
             {
               "points": 36,
-              "value": 254.0
+              "value": 254
             },
             {
               "points": 35,
-              "value": 256.0
+              "value": 256
             },
             {
               "points": 34,
-              "value": 258.0
+              "value": 258
             },
             {
               "points": 33,
-              "value": 260.0
+              "value": 260
             },
             {
               "points": 32,
-              "value": 262.0
+              "value": 262
             },
             {
               "points": 31,
-              "value": 264.0
+              "value": 264
             },
             {
               "points": 30,
-              "value": 266.0
+              "value": 266
             },
             {
               "points": 29,
-              "value": 268.0
+              "value": 268
             },
             {
               "points": 28,
-              "value": 270.0
+              "value": 270
             },
             {
               "points": 27,
-              "value": 272.0
+              "value": 272
             },
             {
               "points": 26,
-              "value": 274.0
+              "value": 274
             },
             {
               "points": 25,
-              "value": 276.0
+              "value": 276
             },
             {
               "points": 24,
-              "value": 278.0
+              "value": 278
             },
             {
               "points": 23,
-              "value": 280.0
+              "value": 280
             },
             {
               "points": 22,
-              "value": 282.0
+              "value": 282
             },
             {
               "points": 21,
-              "value": 284.0
+              "value": 284
             },
             {
               "points": 20,
-              "value": 286.0
+              "value": 286
             },
             {
               "points": 19,
@@ -7175,7 +7175,7 @@
             },
             {
               "points": 1,
-              "value": 405.0
+              "value": 405
             }
           ]
         },
@@ -7204,7 +7204,7 @@
             },
             {
               "points": 45,
-              "value": 519.0
+              "value": 519
             },
             {
               "points": 44,
@@ -7304,7 +7304,7 @@
             },
             {
               "points": 20,
-              "value": 607.0
+              "value": 607
             },
             {
               "points": 19,
@@ -7380,7 +7380,7 @@
             },
             {
               "points": 1,
-              "value": 825.0
+              "value": 825
             }
           ]
         },
@@ -7421,7 +7421,7 @@
             },
             {
               "points": 42,
-              "value": 7.0
+              "value": 7
             },
             {
               "points": 41,
@@ -7509,7 +7509,7 @@
             },
             {
               "points": 20,
-              "value": 8.0
+              "value": 8
             },
             {
               "points": 19,
@@ -8209,7 +8209,7 @@
           "thresholds": [
             {
               "points": 50,
-              "value": 250.0
+              "value": 250
             },
             {
               "points": 49,
@@ -8229,7 +8229,7 @@
             },
             {
               "points": 45,
-              "value": 262.0
+              "value": 262
             },
             {
               "points": 44,
@@ -8329,7 +8329,7 @@
             },
             {
               "points": 20,
-              "value": 299.0
+              "value": 299
             },
             {
               "points": 19,
@@ -8405,7 +8405,7 @@
             },
             {
               "points": 1,
-              "value": 384.0
+              "value": 384
             }
           ]
         },
@@ -8434,7 +8434,7 @@
             },
             {
               "points": 45,
-              "value": 370.0
+              "value": 370
             },
             {
               "points": 44,
@@ -8534,83 +8534,83 @@
             },
             {
               "points": 20,
-              "value": 414.0
+              "value": 414
             },
             {
               "points": 19,
-              "value": 424.0
+              "value": 424
             },
             {
               "points": 18,
-              "value": 434.0
+              "value": 434
             },
             {
               "points": 17,
-              "value": 444.0
+              "value": 444
             },
             {
               "points": 16,
-              "value": 454.0
+              "value": 454
             },
             {
               "points": 15,
-              "value": 464.0
+              "value": 464
             },
             {
               "points": 14,
-              "value": 474.0
+              "value": 474
             },
             {
               "points": 13,
-              "value": 484.0
+              "value": 484
             },
             {
               "points": 12,
-              "value": 494.0
+              "value": 494
             },
             {
               "points": 11,
-              "value": 504.0
+              "value": 504
             },
             {
               "points": 10,
-              "value": 514.0
+              "value": 514
             },
             {
               "points": 9,
-              "value": 524.0
+              "value": 524
             },
             {
               "points": 8,
-              "value": 534.0
+              "value": 534
             },
             {
               "points": 7,
-              "value": 544.0
+              "value": 544
             },
             {
               "points": 6,
-              "value": 554.0
+              "value": 554
             },
             {
               "points": 5,
-              "value": 564.0
+              "value": 564
             },
             {
               "points": 4,
-              "value": 574.0
+              "value": 574
             },
             {
               "points": 3,
-              "value": 584.0
+              "value": 584
             },
             {
               "points": 2,
-              "value": 594.0
+              "value": 594
             },
             {
               "points": 1,
-              "value": 604.0
+              "value": 604
             }
           ]
         },
@@ -8651,7 +8651,7 @@
             },
             {
               "points": 42,
-              "value": 2.0
+              "value": 2
             },
             {
               "points": 41,
@@ -9515,7 +9515,7 @@
             },
             {
               "points": 31,
-              "value": 13.0
+              "value": 13
             },
             {
               "points": 30,
@@ -9635,7 +9635,7 @@
             },
             {
               "points": 1,
-              "value": 5.0
+              "value": 5
             }
           ]
         },
@@ -9921,7 +9921,7 @@
             },
             {
               "points": 32,
-              "value": 46.0
+              "value": 46
             },
             {
               "points": 31,
@@ -10150,7 +10150,7 @@
             },
             {
               "points": 26,
-              "value": 39.0
+              "value": 39
             },
             {
               "points": 25,
@@ -10259,7 +10259,7 @@
           "thresholds": [
             {
               "points": 50,
-              "value": 780.0
+              "value": 780
             },
             {
               "points": 49,
@@ -10279,7 +10279,7 @@
             },
             {
               "points": 45,
-              "value": 834.0
+              "value": 834
             },
             {
               "points": 44,
@@ -10379,7 +10379,7 @@
             },
             {
               "points": 20,
-              "value": 1147.0
+              "value": 1147
             },
             {
               "points": 19,
@@ -10455,7 +10455,7 @@
             },
             {
               "points": 1,
-              "value": 1944.0
+              "value": 1944
             }
           ]
         },
@@ -11420,7 +11420,7 @@
             },
             {
               "points": 17,
-              "value": 18.0
+              "value": 18
             },
             {
               "points": 16,
@@ -12264,7 +12264,7 @@
             },
             {
               "points": 11,
-              "value": 18.0
+              "value": 18
             },
             {
               "points": 10,
@@ -12353,7 +12353,7 @@
             },
             {
               "points": 40,
-              "value": 31.0
+              "value": 31
             },
             {
               "points": 39,
@@ -12393,7 +12393,7 @@
             },
             {
               "points": 30,
-              "value": 34.0
+              "value": 34
             },
             {
               "points": 29,
@@ -13016,7 +13016,7 @@
             },
             {
               "points": 28,
-              "value": 4.0
+              "value": 4
             },
             {
               "points": 27,
@@ -13237,7 +13237,7 @@
             },
             {
               "points": 24,
-              "value": 9.0
+              "value": 9
             },
             {
               "points": 23,
@@ -14559,7 +14559,7 @@
             },
             {
               "points": 1,
-              "value": 37.0
+              "value": 37
             }
           ]
         },
@@ -14992,7 +14992,7 @@
             },
             {
               "points": 47,
-              "value": 9.0
+              "value": 9
             },
             {
               "points": 46,
@@ -15096,7 +15096,7 @@
             },
             {
               "points": 21,
-              "value": 11.0
+              "value": 11
             },
             {
               "points": 20,
@@ -15128,7 +15128,7 @@
             },
             {
               "points": 13,
-              "value": 12.0
+              "value": 12
             },
             {
               "points": 12,
@@ -15518,7 +15518,7 @@
             },
             {
               "points": 18,
-              "value": 200.0
+              "value": 200
             },
             {
               "points": 17,
@@ -15755,7 +15755,7 @@
             },
             {
               "points": 10,
-              "value": 476.0
+              "value": 476
             },
             {
               "points": 9,
@@ -16471,7 +16471,7 @@
             },
             {
               "points": 36,
-              "value": 29.0
+              "value": 29
             },
             {
               "points": 35,
@@ -17464,7 +17464,7 @@
             },
             {
               "points": 44,
-              "value": 15.0
+              "value": 15
             },
             {
               "points": 43,
@@ -18573,7 +18573,7 @@
             },
             {
               "points": 23,
-              "value": 30.0
+              "value": 30
             },
             {
               "points": 22,
@@ -18601,7 +18601,7 @@
             },
             {
               "points": 16,
-              "value": 31.0
+              "value": 31
             },
             {
               "points": 15,
@@ -19208,7 +19208,7 @@
             },
             {
               "points": 19,
-              "value": 240.0
+              "value": 240
             },
             {
               "points": 18,
@@ -19228,7 +19228,7 @@
             },
             {
               "points": 14,
-              "value": 255.0
+              "value": 255
             },
             {
               "points": 13,
@@ -19469,7 +19469,7 @@
             },
             {
               "points": 5,
-              "value": 16.0
+              "value": 16
             },
             {
               "points": 4,
@@ -19711,7 +19711,7 @@
             },
             {
               "points": 47,
-              "value": 3.0
+              "value": 3
             },
             {
               "points": 46,
@@ -19779,7 +19779,7 @@
             },
             {
               "points": 30,
-              "value": 2.0
+              "value": 2
             },
             {
               "points": 29,
@@ -20679,7 +20679,7 @@
             },
             {
               "points": 10,
-              "value": 10.0
+              "value": 10
             },
             {
               "points": 9,
@@ -20864,7 +20864,7 @@
             },
             {
               "points": 15,
-              "value": 16.0
+              "value": 16
             },
             {
               "points": 14,
@@ -21222,7 +21222,7 @@
             },
             {
               "points": 28,
-              "value": 816.0
+              "value": 816
             },
             {
               "points": 27,
@@ -21359,7 +21359,7 @@
             },
             {
               "points": 45,
-              "value": 32.0
+              "value": 32
             },
             {
               "points": 44,
@@ -21535,7 +21535,7 @@
             },
             {
               "points": 1,
-              "value": 40.0
+              "value": 40
             }
           ]
         },
@@ -21740,7 +21740,7 @@
             },
             {
               "points": 1,
-              "value": 50.0
+              "value": 50
             }
           ]
         }
@@ -21791,7 +21791,7 @@
             },
             {
               "points": 40,
-              "value": 7.0
+              "value": 7
             },
             {
               "points": 39,
@@ -22667,7 +22667,7 @@
             },
             {
               "points": 26,
-              "value": 2.0
+              "value": 2
             },
             {
               "points": 25,
@@ -22960,7 +22960,7 @@
             },
             {
               "points": 4,
-              "value": 2.0
+              "value": 2
             },
             {
               "points": 3,
@@ -23913,7 +23913,7 @@
             },
             {
               "points": 22,
-              "value": 16.0
+              "value": 16
             },
             {
               "points": 21,
@@ -24243,7 +24243,7 @@
             },
             {
               "points": 42,
-              "value": 32.0
+              "value": 32
             },
             {
               "points": 41,
@@ -24612,7 +24612,1357 @@
             },
             {
               "points": 1,
-              "value": 50.0
+              "value": 50
+            }
+          ]
+        }
+      }
+    },
+    "Poussin": {
+      "F": {
+        "50m": {
+          "type": "time",
+          "floorPoints": 1,
+          "thresholds": [
+            {
+              "points": 10,
+              "value": 7.7
+            },
+            {
+              "points": 9,
+              "value": 8
+            },
+            {
+              "points": 8,
+              "value": 8.3
+            },
+            {
+              "points": 7,
+              "value": 8.6
+            },
+            {
+              "points": 6,
+              "value": 8.9
+            },
+            {
+              "points": 5,
+              "value": 9.2
+            },
+            {
+              "points": 4,
+              "value": 9.5
+            },
+            {
+              "points": 3,
+              "value": 9.8
+            },
+            {
+              "points": 2,
+              "value": 10.1
+            }
+          ]
+        },
+        "1000m": {
+          "type": "time",
+          "floorPoints": 1,
+          "thresholds": [
+            {
+              "points": 10,
+              "value": 210
+            },
+            {
+              "points": 9,
+              "value": 225
+            },
+            {
+              "points": 8,
+              "value": 240
+            },
+            {
+              "points": 7,
+              "value": 255
+            },
+            {
+              "points": 6,
+              "value": 270
+            },
+            {
+              "points": 5,
+              "value": 285
+            },
+            {
+              "points": 4,
+              "value": 300
+            },
+            {
+              "points": 3,
+              "value": 315
+            },
+            {
+              "points": 2,
+              "value": 330
+            }
+          ]
+        },
+        "50m_haies_65": {
+          "type": "time",
+          "floorPoints": 1,
+          "thresholds": [
+            {
+              "points": 10,
+              "value": 9.5
+            },
+            {
+              "points": 9,
+              "value": 9.8
+            },
+            {
+              "points": 8,
+              "value": 10.1
+            },
+            {
+              "points": 7,
+              "value": 10.4
+            },
+            {
+              "points": 6,
+              "value": 10.7
+            },
+            {
+              "points": 5,
+              "value": 11
+            },
+            {
+              "points": 4,
+              "value": 11.3
+            },
+            {
+              "points": 3,
+              "value": 11.6
+            },
+            {
+              "points": 2,
+              "value": 12
+            }
+          ]
+        },
+        "hauteur": {
+          "type": "dist",
+          "floorPoints": 1,
+          "thresholds": [
+            {
+              "points": 10,
+              "value": 1.35
+            },
+            {
+              "points": 9,
+              "value": 1.25
+            },
+            {
+              "points": 8,
+              "value": 1.2
+            },
+            {
+              "points": 7,
+              "value": 1.15
+            },
+            {
+              "points": 6,
+              "value": 1.1
+            },
+            {
+              "points": 5,
+              "value": 1.05
+            },
+            {
+              "points": 4,
+              "value": 1
+            },
+            {
+              "points": 3,
+              "value": 0.95
+            },
+            {
+              "points": 2,
+              "value": 0.9
+            }
+          ]
+        },
+        "perche": {
+          "type": "dist",
+          "floorPoints": 1,
+          "thresholds": [
+            {
+              "points": 10,
+              "value": 2.1
+            },
+            {
+              "points": 9,
+              "value": 2
+            },
+            {
+              "points": 8,
+              "value": 1.9
+            },
+            {
+              "points": 7,
+              "value": 1.8
+            },
+            {
+              "points": 6,
+              "value": 1.7
+            },
+            {
+              "points": 5,
+              "value": 1.6
+            },
+            {
+              "points": 4,
+              "value": 1.5
+            },
+            {
+              "points": 3,
+              "value": 1.4
+            },
+            {
+              "points": 2,
+              "value": 1.3
+            }
+          ]
+        },
+        "longueur": {
+          "type": "dist",
+          "floorPoints": 1,
+          "thresholds": [
+            {
+              "points": 10,
+              "value": 4
+            },
+            {
+              "points": 9,
+              "value": 3.75
+            },
+            {
+              "points": 8,
+              "value": 3.5
+            },
+            {
+              "points": 7,
+              "value": 3.25
+            },
+            {
+              "points": 6,
+              "value": 3
+            },
+            {
+              "points": 5,
+              "value": 2.75
+            },
+            {
+              "points": 4,
+              "value": 2.5
+            },
+            {
+              "points": 3,
+              "value": 2.25
+            },
+            {
+              "points": 2,
+              "value": 2
+            }
+          ]
+        },
+        "triple_saut": {
+          "type": "dist",
+          "floorPoints": 1,
+          "thresholds": [
+            {
+              "points": 10,
+              "value": 8.4
+            },
+            {
+              "points": 9,
+              "value": 8
+            },
+            {
+              "points": 8,
+              "value": 7.6
+            },
+            {
+              "points": 7,
+              "value": 7.2
+            },
+            {
+              "points": 6,
+              "value": 6.8
+            },
+            {
+              "points": 5,
+              "value": 6.4
+            },
+            {
+              "points": 4,
+              "value": 6
+            },
+            {
+              "points": 3,
+              "value": 5.6
+            },
+            {
+              "points": 2,
+              "value": 5.2
+            }
+          ]
+        },
+        "poids_1_5kg": {
+          "type": "dist",
+          "floorPoints": 1,
+          "thresholds": [
+            {
+              "points": 10,
+              "value": 7.75
+            },
+            {
+              "points": 9,
+              "value": 7.25
+            },
+            {
+              "points": 8,
+              "value": 6.75
+            },
+            {
+              "points": 7,
+              "value": 6.25
+            },
+            {
+              "points": 6,
+              "value": 5.75
+            },
+            {
+              "points": 5,
+              "value": 5.25
+            },
+            {
+              "points": 4,
+              "value": 4.75
+            },
+            {
+              "points": 3,
+              "value": 4.25
+            },
+            {
+              "points": 2,
+              "value": 3.75
+            }
+          ]
+        },
+        "poids_2kg": {
+          "type": "dist",
+          "floorPoints": 1,
+          "thresholds": [
+            {
+              "points": 10,
+              "value": 7.75
+            },
+            {
+              "points": 9,
+              "value": 7.25
+            },
+            {
+              "points": 8,
+              "value": 6.75
+            },
+            {
+              "points": 7,
+              "value": 6.25
+            },
+            {
+              "points": 6,
+              "value": 5.75
+            },
+            {
+              "points": 5,
+              "value": 5.25
+            },
+            {
+              "points": 4,
+              "value": 4.75
+            },
+            {
+              "points": 3,
+              "value": 4.25
+            },
+            {
+              "points": 2,
+              "value": 3.75
+            }
+          ]
+        },
+        "disque_0_6kg": {
+          "type": "dist",
+          "floorPoints": 1,
+          "thresholds": [
+            {
+              "points": 10,
+              "value": 23
+            },
+            {
+              "points": 9,
+              "value": 21
+            },
+            {
+              "points": 8,
+              "value": 19
+            },
+            {
+              "points": 7,
+              "value": 17
+            },
+            {
+              "points": 6,
+              "value": 15
+            },
+            {
+              "points": 5,
+              "value": 13
+            },
+            {
+              "points": 4,
+              "value": 11
+            },
+            {
+              "points": 3,
+              "value": 9
+            },
+            {
+              "points": 2,
+              "value": 7
+            }
+          ]
+        },
+        "marteau_1_5kg": {
+          "type": "dist",
+          "floorPoints": 1,
+          "thresholds": [
+            {
+              "points": 10,
+              "value": 20
+            },
+            {
+              "points": 9,
+              "value": 18.5
+            },
+            {
+              "points": 8,
+              "value": 17
+            },
+            {
+              "points": 7,
+              "value": 15.5
+            },
+            {
+              "points": 6,
+              "value": 14
+            },
+            {
+              "points": 5,
+              "value": 12.5
+            },
+            {
+              "points": 4,
+              "value": 11
+            },
+            {
+              "points": 3,
+              "value": 9.5
+            },
+            {
+              "points": 2,
+              "value": 8
+            }
+          ]
+        },
+        "marteau_2kg": {
+          "type": "dist",
+          "floorPoints": 1,
+          "thresholds": [
+            {
+              "points": 10,
+              "value": 20
+            },
+            {
+              "points": 9,
+              "value": 18.5
+            },
+            {
+              "points": 8,
+              "value": 17
+            },
+            {
+              "points": 7,
+              "value": 15.5
+            },
+            {
+              "points": 6,
+              "value": 14
+            },
+            {
+              "points": 5,
+              "value": 12.5
+            },
+            {
+              "points": 4,
+              "value": 11
+            },
+            {
+              "points": 3,
+              "value": 9.5
+            },
+            {
+              "points": 2,
+              "value": 8
+            }
+          ]
+        },
+        "javelot_300g": {
+          "type": "dist",
+          "floorPoints": 1,
+          "thresholds": [
+            {
+              "points": 10,
+              "value": 18.5
+            },
+            {
+              "points": 9,
+              "value": 17
+            },
+            {
+              "points": 8,
+              "value": 15.5
+            },
+            {
+              "points": 7,
+              "value": 14
+            },
+            {
+              "points": 6,
+              "value": 12.5
+            },
+            {
+              "points": 5,
+              "value": 11
+            },
+            {
+              "points": 4,
+              "value": 9.5
+            },
+            {
+              "points": 3,
+              "value": 8
+            },
+            {
+              "points": 2,
+              "value": 6.5
+            }
+          ]
+        },
+        "javelot_400g": {
+          "type": "dist",
+          "floorPoints": 1,
+          "thresholds": [
+            {
+              "points": 10,
+              "value": 18.5
+            },
+            {
+              "points": 9,
+              "value": 17
+            },
+            {
+              "points": 8,
+              "value": 15.5
+            },
+            {
+              "points": 7,
+              "value": 14
+            },
+            {
+              "points": 6,
+              "value": 12.5
+            },
+            {
+              "points": 5,
+              "value": 11
+            },
+            {
+              "points": 4,
+              "value": 9.5
+            },
+            {
+              "points": 3,
+              "value": 8
+            },
+            {
+              "points": 2,
+              "value": 6.5
+            }
+          ]
+        },
+        "4x60m": {
+          "type": "time",
+          "floorPoints": 1,
+          "thresholds": [
+            {
+              "points": 10,
+              "value": 30
+            },
+            {
+              "points": 9,
+              "value": 32
+            },
+            {
+              "points": 8,
+              "value": 34
+            },
+            {
+              "points": 7,
+              "value": 36
+            },
+            {
+              "points": 6,
+              "value": 38
+            },
+            {
+              "points": 5,
+              "value": 40
+            },
+            {
+              "points": 4,
+              "value": 42
+            },
+            {
+              "points": 3,
+              "value": 44
+            },
+            {
+              "points": 2,
+              "value": 46
+            }
+          ]
+        },
+        "1000m_marche": {
+          "type": "time",
+          "floorPoints": 1,
+          "thresholds": [
+            {
+              "points": 10,
+              "value": 390
+            },
+            {
+              "points": 9,
+              "value": 405
+            },
+            {
+              "points": 8,
+              "value": 420
+            },
+            {
+              "points": 7,
+              "value": 435
+            },
+            {
+              "points": 6,
+              "value": 450
+            },
+            {
+              "points": 5,
+              "value": 465
+            },
+            {
+              "points": 4,
+              "value": 480
+            },
+            {
+              "points": 3,
+              "value": 495
+            },
+            {
+              "points": 2,
+              "value": 510
+            }
+          ]
+        }
+      },
+      "M": {
+        "50m": {
+          "type": "time",
+          "floorPoints": 1,
+          "thresholds": [
+            {
+              "points": 10,
+              "value": 7.7
+            },
+            {
+              "points": 9,
+              "value": 8
+            },
+            {
+              "points": 8,
+              "value": 8.3
+            },
+            {
+              "points": 7,
+              "value": 8.6
+            },
+            {
+              "points": 6,
+              "value": 8.9
+            },
+            {
+              "points": 5,
+              "value": 9.2
+            },
+            {
+              "points": 4,
+              "value": 9.5
+            },
+            {
+              "points": 3,
+              "value": 9.8
+            },
+            {
+              "points": 2,
+              "value": 10.1
+            }
+          ]
+        },
+        "1000m": {
+          "type": "time",
+          "floorPoints": 1,
+          "thresholds": [
+            {
+              "points": 10,
+              "value": 210
+            },
+            {
+              "points": 9,
+              "value": 225
+            },
+            {
+              "points": 8,
+              "value": 240
+            },
+            {
+              "points": 7,
+              "value": 255
+            },
+            {
+              "points": 6,
+              "value": 270
+            },
+            {
+              "points": 5,
+              "value": 285
+            },
+            {
+              "points": 4,
+              "value": 300
+            },
+            {
+              "points": 3,
+              "value": 315
+            },
+            {
+              "points": 2,
+              "value": 330
+            }
+          ]
+        },
+        "50m_haies_65": {
+          "type": "time",
+          "floorPoints": 1,
+          "thresholds": [
+            {
+              "points": 10,
+              "value": 9.5
+            },
+            {
+              "points": 9,
+              "value": 9.8
+            },
+            {
+              "points": 8,
+              "value": 10.1
+            },
+            {
+              "points": 7,
+              "value": 10.4
+            },
+            {
+              "points": 6,
+              "value": 10.7
+            },
+            {
+              "points": 5,
+              "value": 11
+            },
+            {
+              "points": 4,
+              "value": 11.3
+            },
+            {
+              "points": 3,
+              "value": 11.6
+            },
+            {
+              "points": 2,
+              "value": 12
+            }
+          ]
+        },
+        "hauteur": {
+          "type": "dist",
+          "floorPoints": 1,
+          "thresholds": [
+            {
+              "points": 10,
+              "value": 1.35
+            },
+            {
+              "points": 9,
+              "value": 1.25
+            },
+            {
+              "points": 8,
+              "value": 1.2
+            },
+            {
+              "points": 7,
+              "value": 1.15
+            },
+            {
+              "points": 6,
+              "value": 1.1
+            },
+            {
+              "points": 5,
+              "value": 1.05
+            },
+            {
+              "points": 4,
+              "value": 1
+            },
+            {
+              "points": 3,
+              "value": 0.95
+            },
+            {
+              "points": 2,
+              "value": 0.9
+            }
+          ]
+        },
+        "perche": {
+          "type": "dist",
+          "floorPoints": 1,
+          "thresholds": [
+            {
+              "points": 10,
+              "value": 2.1
+            },
+            {
+              "points": 9,
+              "value": 2
+            },
+            {
+              "points": 8,
+              "value": 1.9
+            },
+            {
+              "points": 7,
+              "value": 1.8
+            },
+            {
+              "points": 6,
+              "value": 1.7
+            },
+            {
+              "points": 5,
+              "value": 1.6
+            },
+            {
+              "points": 4,
+              "value": 1.5
+            },
+            {
+              "points": 3,
+              "value": 1.4
+            },
+            {
+              "points": 2,
+              "value": 1.3
+            }
+          ]
+        },
+        "longueur": {
+          "type": "dist",
+          "floorPoints": 1,
+          "thresholds": [
+            {
+              "points": 10,
+              "value": 4
+            },
+            {
+              "points": 9,
+              "value": 3.75
+            },
+            {
+              "points": 8,
+              "value": 3.5
+            },
+            {
+              "points": 7,
+              "value": 3.25
+            },
+            {
+              "points": 6,
+              "value": 3
+            },
+            {
+              "points": 5,
+              "value": 2.75
+            },
+            {
+              "points": 4,
+              "value": 2.5
+            },
+            {
+              "points": 3,
+              "value": 2.25
+            },
+            {
+              "points": 2,
+              "value": 2
+            }
+          ]
+        },
+        "triple_saut": {
+          "type": "dist",
+          "floorPoints": 1,
+          "thresholds": [
+            {
+              "points": 10,
+              "value": 8.4
+            },
+            {
+              "points": 9,
+              "value": 8
+            },
+            {
+              "points": 8,
+              "value": 7.6
+            },
+            {
+              "points": 7,
+              "value": 7.2
+            },
+            {
+              "points": 6,
+              "value": 6.8
+            },
+            {
+              "points": 5,
+              "value": 6.4
+            },
+            {
+              "points": 4,
+              "value": 6
+            },
+            {
+              "points": 3,
+              "value": 5.6
+            },
+            {
+              "points": 2,
+              "value": 5.2
+            }
+          ]
+        },
+        "poids_1_5kg": {
+          "type": "dist",
+          "floorPoints": 1,
+          "thresholds": [
+            {
+              "points": 10,
+              "value": 7.75
+            },
+            {
+              "points": 9,
+              "value": 7.25
+            },
+            {
+              "points": 8,
+              "value": 6.75
+            },
+            {
+              "points": 7,
+              "value": 6.25
+            },
+            {
+              "points": 6,
+              "value": 5.75
+            },
+            {
+              "points": 5,
+              "value": 5.25
+            },
+            {
+              "points": 4,
+              "value": 4.75
+            },
+            {
+              "points": 3,
+              "value": 4.25
+            },
+            {
+              "points": 2,
+              "value": 3.75
+            }
+          ]
+        },
+        "poids_2kg": {
+          "type": "dist",
+          "floorPoints": 1,
+          "thresholds": [
+            {
+              "points": 10,
+              "value": 7.75
+            },
+            {
+              "points": 9,
+              "value": 7.25
+            },
+            {
+              "points": 8,
+              "value": 6.75
+            },
+            {
+              "points": 7,
+              "value": 6.25
+            },
+            {
+              "points": 6,
+              "value": 5.75
+            },
+            {
+              "points": 5,
+              "value": 5.25
+            },
+            {
+              "points": 4,
+              "value": 4.75
+            },
+            {
+              "points": 3,
+              "value": 4.25
+            },
+            {
+              "points": 2,
+              "value": 3.75
+            }
+          ]
+        },
+        "disque_0_6kg": {
+          "type": "dist",
+          "floorPoints": 1,
+          "thresholds": [
+            {
+              "points": 10,
+              "value": 23
+            },
+            {
+              "points": 9,
+              "value": 21
+            },
+            {
+              "points": 8,
+              "value": 19
+            },
+            {
+              "points": 7,
+              "value": 17
+            },
+            {
+              "points": 6,
+              "value": 15
+            },
+            {
+              "points": 5,
+              "value": 13
+            },
+            {
+              "points": 4,
+              "value": 11
+            },
+            {
+              "points": 3,
+              "value": 9
+            },
+            {
+              "points": 2,
+              "value": 7
+            }
+          ]
+        },
+        "marteau_1_5kg": {
+          "type": "dist",
+          "floorPoints": 1,
+          "thresholds": [
+            {
+              "points": 10,
+              "value": 20
+            },
+            {
+              "points": 9,
+              "value": 18.5
+            },
+            {
+              "points": 8,
+              "value": 17
+            },
+            {
+              "points": 7,
+              "value": 15.5
+            },
+            {
+              "points": 6,
+              "value": 14
+            },
+            {
+              "points": 5,
+              "value": 12.5
+            },
+            {
+              "points": 4,
+              "value": 11
+            },
+            {
+              "points": 3,
+              "value": 9.5
+            },
+            {
+              "points": 2,
+              "value": 8
+            }
+          ]
+        },
+        "marteau_2kg": {
+          "type": "dist",
+          "floorPoints": 1,
+          "thresholds": [
+            {
+              "points": 10,
+              "value": 20
+            },
+            {
+              "points": 9,
+              "value": 18.5
+            },
+            {
+              "points": 8,
+              "value": 17
+            },
+            {
+              "points": 7,
+              "value": 15.5
+            },
+            {
+              "points": 6,
+              "value": 14
+            },
+            {
+              "points": 5,
+              "value": 12.5
+            },
+            {
+              "points": 4,
+              "value": 11
+            },
+            {
+              "points": 3,
+              "value": 9.5
+            },
+            {
+              "points": 2,
+              "value": 8
+            }
+          ]
+        },
+        "javelot_300g": {
+          "type": "dist",
+          "floorPoints": 1,
+          "thresholds": [
+            {
+              "points": 10,
+              "value": 18.5
+            },
+            {
+              "points": 9,
+              "value": 17
+            },
+            {
+              "points": 8,
+              "value": 15.5
+            },
+            {
+              "points": 7,
+              "value": 14
+            },
+            {
+              "points": 6,
+              "value": 12.5
+            },
+            {
+              "points": 5,
+              "value": 11
+            },
+            {
+              "points": 4,
+              "value": 9.5
+            },
+            {
+              "points": 3,
+              "value": 8
+            },
+            {
+              "points": 2,
+              "value": 6.5
+            }
+          ]
+        },
+        "javelot_400g": {
+          "type": "dist",
+          "floorPoints": 1,
+          "thresholds": [
+            {
+              "points": 10,
+              "value": 18.5
+            },
+            {
+              "points": 9,
+              "value": 17
+            },
+            {
+              "points": 8,
+              "value": 15.5
+            },
+            {
+              "points": 7,
+              "value": 14
+            },
+            {
+              "points": 6,
+              "value": 12.5
+            },
+            {
+              "points": 5,
+              "value": 11
+            },
+            {
+              "points": 4,
+              "value": 9.5
+            },
+            {
+              "points": 3,
+              "value": 8
+            },
+            {
+              "points": 2,
+              "value": 6.5
+            }
+          ]
+        },
+        "4x60m": {
+          "type": "time",
+          "floorPoints": 1,
+          "thresholds": [
+            {
+              "points": 10,
+              "value": 30
+            },
+            {
+              "points": 9,
+              "value": 32
+            },
+            {
+              "points": 8,
+              "value": 34
+            },
+            {
+              "points": 7,
+              "value": 36
+            },
+            {
+              "points": 6,
+              "value": 38
+            },
+            {
+              "points": 5,
+              "value": 40
+            },
+            {
+              "points": 4,
+              "value": 42
+            },
+            {
+              "points": 3,
+              "value": 44
+            },
+            {
+              "points": 2,
+              "value": 46
+            }
+          ]
+        },
+        "1000m_marche": {
+          "type": "time",
+          "floorPoints": 1,
+          "thresholds": [
+            {
+              "points": 10,
+              "value": 390
+            },
+            {
+              "points": 9,
+              "value": 405
+            },
+            {
+              "points": 8,
+              "value": 420
+            },
+            {
+              "points": 7,
+              "value": 435
+            },
+            {
+              "points": 6,
+              "value": 450
+            },
+            {
+              "points": 5,
+              "value": 465
+            },
+            {
+              "points": 4,
+              "value": 480
+            },
+            {
+              "points": 3,
+              "value": 495
+            },
+            {
+              "points": 2,
+              "value": 510
             }
           ]
         }
@@ -24620,14 +25970,15 @@
     }
   },
   "source": {
-    "officialPage": "https://www.athle.fr/asp.net/main.html/html.aspx?htmlid=5577",
+    "officialPage": "https://www.athle.fr/contenu/jeunes-regles-et-cotations/5577",
     "pdfs": {
       "Benjamin_F": "https://www.athle.fr/pdf/docffa/pointjeunes_bef.pdf",
       "Benjamin_M": "https://www.athle.fr/pdf/docffa/pointjeunes_bem.pdf",
       "Minime_F": "https://www.athle.fr/pdf/docffa/pointjeunes_mif.pdf",
       "Minime_M": "https://www.athle.fr/pdf/docffa/pointjeunes_mim.pdf",
       "Cadet_F": "https://www.athle.fr/pdf/docffa/pointjeunes_caf.pdf",
-      "Cadet_M": "https://www.athle.fr/pdf/docffa/pointjeunes_cam.pdf"
+      "Cadet_M": "https://www.athle.fr/pdf/docffa/pointjeunes_cam.pdf",
+      "Poussin": "https://www.athle.fr/pdf/docffa/pointjeunes_po.pdf"
     }
   }
 }

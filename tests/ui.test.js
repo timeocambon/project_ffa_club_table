@@ -12,7 +12,7 @@ const publicDirectory = fileURLToPath(new URL("../public/", import.meta.url));
 const mockData = {
   clubId: "081061",
   year: "2026",
-  count: 3,
+  count: 5,
   source: "test-local",
   results: [
     {
@@ -39,6 +39,24 @@ const mockData = {
       infos: "BEF / 2013",
       sex: "F",
       performance: "3'20''00",
+      date: "01/06/26",
+      location: "Test",
+    },
+    {
+      event: "50m",
+      athlete: "DURAND Emma",
+      infos: "POF / 2016",
+      sex: "F",
+      performance: "8''00",
+      date: "01/06/26",
+      location: "Test",
+    },
+    {
+      event: "3000m Steeple (91)",
+      athlete: "BERNARD Paul",
+      infos: "SEM / 1998",
+      sex: "M",
+      performance: "9'00''00",
       date: "01/06/26",
       location: "Test",
     },
@@ -153,17 +171,29 @@ test(
 
       const routeRow = page.getByRole("row", { name: /DUPONT Alice/ });
       const benjaminRow = page.getByRole("row", { name: /MARTIN Lea/ });
+      const poussinRow = page.getByRole("row", { name: /DURAND Emma/ });
+      const steepleRow = page.getByRole("row", { name: /BERNARD Paul/ });
       await routeRow.waitFor();
       await benjaminRow.waitFor();
+      await poussinRow.waitFor();
+      await steepleRow.waitFor();
 
       assert.match(await routeRow.innerText(), /35'00''\s+N\/D/);
       assert.match(await benjaminRow.innerText(), /2'45''00\s+N\/D/);
       assert.match(await benjaminRow.innerText(), /3'20''00\s+40/);
+      assert.match(await poussinRow.innerText(), /8''00\s+9/);
+      assert.match(await steepleRow.innerText(), /9'00''00\s+N\/D/);
       assert.match(
         await page.locator(".points-legend").innerText(),
         /aucun barème disponible/i,
       );
-      assert.match(await page.locator("#statusText").innerText(), /OK — lignes: 2/);
+      assert.match(await page.locator("#statusText").innerText(), /OK — lignes: 4/);
+
+      await page.getByRole("button", { name: /Barème : 50/ }).click();
+      await page.getByRole("button", { name: "Barème 1000", exact: true }).click();
+      assert.match(await routeRow.innerText(), /35'00''\s+986/);
+      assert.match(await steepleRow.innerText(), /9'00''00\s+994/);
+      assert.match(await poussinRow.innerText(), /8''00\s+N\/D/);
 
       const athleteHeader = page.locator('th[data-col="athlete"]');
       assert.equal(await athleteHeader.getAttribute("aria-sort"), "ascending");

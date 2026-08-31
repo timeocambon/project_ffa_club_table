@@ -988,10 +988,13 @@ function eventKeyForPoints(cat, sex, eventName) {
   if (s === "3000m") return "3000m";
   if (s === "1500m steeple") return "1500m_steeple";
   if (s === "2000m steeple") return "2000m_steeple";
+  if (s === "1000m marche") return "1000m_marche";
   if (s === "2000m marche") return "2000m_marche";
   if (s === "3000m marche") return "3000m_marche";
   if (s === "4 x 60m") return "4x60m";
-  if (s === "4 x 60m mixte") return "4x60m_mixte";
+  if (s === "4 x 60m mixte") {
+    return cat === "Poussin" ? "4x60m" : "4x60m_mixte";
+  }
   if (s === "4 x 100m") return "4x100m";
   if (s === "4 x 100m mixte") return "4x100m_mixte";
 
@@ -1092,11 +1095,33 @@ function eventKeyForBarreme1000(row, eventName, bestResult) {
   }
 
   if (s === "10000m") return { venue: "outdoor", code: "10000m" };
-  if (s === "2000m steeple") return { venue: "outdoor", code: "2000mSC" };
-  if (s === "3000m steeple") return { venue: "outdoor", code: "3000mSC" };
+  if (/^2000m steeple(?: \(\d+\))?$/.test(s)) {
+    return { venue: "outdoor", code: "2000mSC" };
+  }
+  if (/^3000m steeple(?: \(\d+\))?$/.test(s)) {
+    return { venue: "outdoor", code: "3000mSC" };
+  }
   if (s === "3000m marche") return { venue: "outdoor", code: "3kmW" };
   if (s === "5000m marche") return { venue: "outdoor", code: "5kmW" };
   if (s === "10000m marche") return { venue: "outdoor", code: "10kmW" };
+
+  const roadKilometers = s.match(/^(5|10|15|20|25|30|100) km route$/);
+  if (roadKilometers) {
+    return {
+      venue: "outdoor",
+      code: `${roadKilometers[1]}kmRoad`,
+    };
+  }
+  if (s === "mile route") return { venue: "outdoor", code: "MileRoad" };
+  if (/^10 miles(?: route)?$/.test(s)) {
+    return { venue: "outdoor", code: "10MilesRoad" };
+  }
+  if (/^(?:1\/2|semi[- ]?)\s*marathon(?: route)?$/.test(s)) {
+    return { venue: "outdoor", code: "HalfMarathon" };
+  }
+  if (/^marathon(?: route)?$/.test(s)) {
+    return { venue: "outdoor", code: "Marathon" };
+  }
 
   if (/4\s*x\s*100m/.test(s)) return { venue: "outdoor", code: "4x100m" };
   if (/4\s*x\s*200m/.test(s)) return { venue, code: "4x200m" };

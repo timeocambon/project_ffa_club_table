@@ -11,6 +11,9 @@ import {
 const barreme50 = JSON.parse(
   await readFile(new URL("../public/barreme50.json", import.meta.url), "utf8"),
 );
+const barreme1000 = JSON.parse(
+  await readFile(new URL("../public/barreme1000.json", import.meta.url), "utf8"),
+);
 
 test("convertit les formats de temps et de distance utilisés par l'interface", () => {
   assert.deepEqual(perfToComparable("3'20''00"), {
@@ -68,4 +71,27 @@ test("distingue les états sans barème, invalide, hors barème et vide", () => 
   const empty = pointsResultFromTable(timeTable, "", "50");
   assert.equal(empty.status, "empty");
   assert.equal(pointsPresentation(empty).label, "—");
+});
+
+test("applique le barème Poussin, y compris le point de participation", () => {
+  const table = barreme50.categories.Poussin.F["50m"];
+
+  assert.equal(pointsResultFromTable(table, "7''70", "50").points, 10);
+  assert.equal(pointsResultFromTable(table, "10''10", "50").points, 2);
+  assert.deepEqual(pointsResultFromTable(table, "12''00", "50"), {
+    points: 1,
+    status: "ok",
+    mode: "50",
+  });
+});
+
+test("calcule les cotations World Athletics 2025 des courses sur route", () => {
+  const men5km = barreme1000.sexes.M.outdoor["5kmRoad"];
+  const womenMarathon = barreme1000.sexes.F.outdoor.Marathon;
+
+  assert.equal(pointsResultFromTable(men5km, "12:10", "1000").points, 1400);
+  assert.equal(
+    pointsResultFromTable(womenMarathon, "2:01:23", "1000").points,
+    1400,
+  );
 });
