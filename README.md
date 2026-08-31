@@ -4,6 +4,11 @@ Application web permettant de récupérer les bilans d’un club depuis Athlé.f
 de regrouper les meilleures performances par athlète et de calculer les points
 avec les barèmes 50 et 1000.
 
+## Documentation
+
+- [Guide utilisateur](docs/GUIDE_UTILISATEUR.md) ;
+- [guide de déploiement Render](docs/DEPLOIEMENT_RENDER.md).
+
 ## Fonctionnalités
 
 - récupération des résultats d’un club FFA par année ;
@@ -53,6 +58,7 @@ Commandes ciblées :
 npm run validate:barremes
 npm run test:unit
 npm run test:ui
+npm run test:smoke
 ```
 
 ## Intégration continue
@@ -86,7 +92,10 @@ Pour publier l'application :
 1. envoyer la branche principale sur GitHub ;
 2. choisir **New > Blueprint** dans le tableau de bord Render ;
 3. connecter ce dépôt et laisser Render détecter `render.yaml` ;
-4. vérifier le nom du service puis lancer **Apply**.
+4. vérifier le nom du service puis lancer **Deploy Blueprint**.
+
+La procédure complète, les contrôles après publication et le retour arrière
+sont détaillés dans le [guide de déploiement Render](docs/DEPLOIEMENT_RENDER.md).
 
 Render fournit automatiquement la variable `PORT`. Il ne faut pas la créer
 manuellement : le serveur la valide et écoute sur `0.0.0.0`, comme demandé par
@@ -144,7 +153,9 @@ d’Athlé.fr renvoie `502`, ou `504` lorsque le délai maximal est dépassé.
 - `public/` : interface, styles et barèmes ;
 - `public/scoring.js` : conversion des performances et calcul des points ;
 - `scripts/validate-barremes.js` : validation des fichiers de barèmes ;
-- `tests/` : tests unitaires et scénario d’interface.
+- `scripts/smoke-test.js` : contrôle d'une installation locale ou Render ;
+- `docs/` : guides utilisateur et déploiement ;
+- `tests/` : tests unitaires et scénario d'interface.
 
 ## Limites connues
 
