@@ -57,6 +57,17 @@ function createTestServer() {
     try {
       const url = new URL(request.url, "http://127.0.0.1");
       if (url.pathname === "/api/bilans") {
+        if (url.searchParams.get("club") === "999999") {
+          response.writeHead(502, {
+            "content-type": "application/json; charset=utf-8",
+          });
+          response.end(JSON.stringify({
+            error: "scrape_failed",
+            message: "Impossible de récupérer les résultats depuis Athlé.fr.",
+          }));
+          return;
+        }
+
         response.writeHead(200, {
           "content-type": "application/json; charset=utf-8",
         });
@@ -128,6 +139,12 @@ test(
         await page.locator(".points-legend").innerText(),
         /aucun barème disponible/i,
       );
+
+      await page.getByRole("textbox", { name: "Club" }).fill("999999");
+      await page.getByRole("button", { name: "Charger" }).click();
+      await page.getByText(
+        "Erreur: Impossible de récupérer les résultats depuis Athlé.fr.",
+      ).waitFor();
       assert.deepEqual(errors, []);
     } finally {
       if (browser) await browser.close();

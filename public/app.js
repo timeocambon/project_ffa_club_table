@@ -83,7 +83,7 @@ updateSexFilterUi();
 updateBarremeModeUi();
 
 let isLoading = false;
-const FETCH_TIMEOUT_MS = 180000;
+const FETCH_TIMEOUT_MS = 195000;
 const LOADING_PROGRESS_MESSAGES = [
   { upTo: 20, text: "Préparation de la récupération…" },
   { upTo: 40, text: "Connexion au serveur…" },
@@ -2155,7 +2155,7 @@ async function fetchData() {
 
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      throw new Error(err?.error || `HTTP ${res.status}`);
+      throw new Error(err?.message || err?.error || `HTTP ${res.status}`);
     }
 
     const data = await res.json();

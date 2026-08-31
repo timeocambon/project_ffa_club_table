@@ -4,28 +4,280 @@ import { chromium } from "playwright";
 import * as cheerio from "cheerio";
 import { pathToFileURL } from "node:url";
 
+const CACHE_MS = 5 * 60 * 1000; // 5 minutes
+const CACHE_MAX_ENTRIES = 100;
+const SCRAPE_TIMEOUT_MS = 180000;
+const MIN_RESULTS_YEAR = 2000;
+const MAX_RESULTS_PAGES = 20;
+
+let browserPromise = null;
+
+async function getBrowser() {
+  if (!browserPromise) {
+    const launchPromise = chromium
+      .launch({ headless: true })
+      .then((instance) => {
+        instance.on("disconnected", () => {
+          if (browserPromise === launchPromise) browserPromise = null;
+        });
+        console.log("Browser launched");
+        return instance;
+      })
+      .catch((error) => {
+        if (browserPromise === launchPromise) browserPromise = null;
+        throw error;
+      });
+
+    browserPromise = launchPromise;
+  }
+
+  return browserPromise;
+}
+
+async function closeBrowser() {
+  const currentBrowserPromise = browserPromise;
+  browserPromise = null;
+  if (!currentBrowserPromise) return;
+
+  try {
+    const browser = await currentBrowserPromise;
+    if (browser.isConnected()) await browser.close();
+  } catch (error) {
+    console.error("Fermeture du navigateur impossible :", error);
+  }
+}
+
+function parseBilansQuery(query, currentYear = new Date().getFullYear()) {
+  const club = (query?.club ?? "").toString().trim();
+  const annee = (query?.annee ?? String(currentYear)).toString().trim();
+  const debug = (query?.debug ?? "").toString().trim() === "1";
+
+  if (!/^\d{6}$/.test(club)) {
+    return {
+      error: "club doit être un code à 6 chiffres, ex: 081061",
+    };
+  }
+
+  const yearNumber = Number(annee);
+  if (
+    !/^\d{4}$/.test(annee) ||
+    !Number.isInteger(yearNumber) ||
+    yearNumber < MIN_RESULTS_YEAR ||
+    yearNumber > currentYear + 1
+  ) {
+    return {
+      error: `annee doit être comprise entre ${MIN_RESULTS_YEAR} et ${currentYear + 1}`,
+    };
+  }
+
+  return { value: { club, annee, debug } };
+}
+
+function createBilansLoader({
+  scrape,
+  cacheMs = CACHE_MS,
+  maxCacheEntries = CACHE_MAX_ENTRIES,
+  now = () => Date.now(),
+}) {
+  const cache = new Map();
+  const pending = new Map();
+
+  function pruneCache(timestamp) {
+    for (const [key, entry] of cache) {
+      if (timestamp - entry.ts >= cacheMs) cache.delete(key);
+    }
+
+    while (cache.size > maxCacheEntries) {
+      const oldestKey = cache.keys().next().value;
+      cache.delete(oldestKey);
+    }
+  }
+
+  return async function loadBilans(params) {
+    if (params.debug) return scrape(params);
+
+    const cacheKey = `${params.club}:${params.annee}`;
+    const timestamp = now();
+    pruneCache(timestamp);
+
+    const cached = cache.get(cacheKey);
+    if (cached) return cached.data;
+
+    const pendingRequest = pending.get(cacheKey);
+    if (pendingRequest) return pendingRequest;
+
+    const request = Promise.resolve()
+      .then(() => scrape(params))
+      .then((data) => {
+        const completedAt = now();
+        cache.delete(cacheKey);
+        cache.set(cacheKey, { ts: completedAt, data });
+        pruneCache(completedAt);
+        return data;
+      })
+      .finally(() => {
+        pending.delete(cacheKey);
+      });
+
+    pending.set(cacheKey, request);
+    return request;
+  };
+}
+
+function withTimeout(promise, timeoutMs, message) {
+  let timer = null;
+  const timeout = new Promise((_, reject) => {
+    timer = setTimeout(() => {
+      const error = new Error(message);
+      error.code = "SCRAPE_TIMEOUT";
+      reject(error);
+    }, timeoutMs);
+  });
+
+  return Promise.race([promise, timeout]).finally(() => {
+    if (timer) clearTimeout(timer);
+  });
+}
+
+async function gotoWithRetry(
+  page,
+  url,
+  { waitUntil = "domcontentloaded", timeout = 30000 } = {},
+  attempts = 3,
+) {
+  let lastError;
+  for (let attempt = 1; attempt <= attempts; attempt++) {
+    try {
+      await page.goto(url, { waitUntil, timeout });
+      return;
+    } catch (error) {
+      lastError = error;
+      const message = String(error?.message || error);
+      const retryable =
+        /ERR_NAME_NOT_RESOLVED|ERR_CONNECTION|net::|Timeout/i.test(message);
+      if (!retryable || attempt === attempts) break;
+      await page.waitForTimeout(700 * attempt);
+    }
+  }
+  throw lastError;
+}
+
+async function scrapeBilans({ club, annee, debug }) {
+  const baseUrl =
+    `https://www.athle.fr/bases/liste.aspx?frmbase=bilans&frmmode=1&frmespace=1478` +
+    `&frmannee=${encodeURIComponent(annee)}&frmclub=${encodeURIComponent(club)}` +
+    `&frmcategorie=&frmsexe=&frmepreuve=&frmvent=&frmligue=&frmdepartement=&frmstructure=&frmnationalite=&frmplaces=&frmpostback=true`;
+
+  const browser = await getBrowser();
+  let page = null;
+
+  try {
+    page = await browser.newPage();
+    await page.route("**/*", (route) => {
+      const type = route.request().resourceType();
+      if (["image", "font", "stylesheet", "media"].includes(type)) {
+        return route.abort();
+      }
+      return route.continue();
+    });
+
+    const scrape = (async () => {
+      const all = [];
+      let debugTextSample = null;
+      const debugPages = [];
+
+      await gotoWithRetry(page, `${baseUrl}&frmposition=0`);
+      await page
+        .getByText("Résultats de votre recherche")
+        .waitFor({ timeout: 20000 });
+
+      const firstHtml = await page.content();
+      const totalPages = extractTotalPages(firstHtml);
+      console.log("Total pages détectées:", totalPages);
+
+      if (debug) {
+        debugTextSample = extractNormalizedText(firstHtml).slice(0, 2500);
+      }
+
+      function collectPage(html, position) {
+        const { results, stats } = parseBilansWithStats(html, club, annee);
+        if (debug) {
+          debugPages.push({
+            pos: position,
+            parsedCount: results.length,
+            stats,
+            first2: results.slice(0, 2),
+          });
+        }
+        all.push(...results);
+      }
+
+      collectPage(firstHtml, 0);
+
+      for (let position = 1; position < totalPages; position++) {
+        await gotoWithRetry(page, `${baseUrl}&frmposition=${position}`);
+        await page
+          .getByText("Résultats de votre recherche")
+          .waitFor({ timeout: 20000 });
+        collectPage(await page.content(), position);
+      }
+
+      const uniqueResults = dedup(all);
+      const results = uniqueResults.filter((result) =>
+        isSupportedEvent(result.event),
+      );
+
+      const data = {
+        clubId: club,
+        year: annee,
+        count: results.length,
+        results,
+        source: "athle.fr",
+        ...(debug
+          ? {
+              debugTextSample,
+              debugPages,
+              debugSteepleRaw: uniqueResults.filter((result) =>
+                /steeple/i.test(result.event)
+              ),
+              debugSteepleFiltered: results.filter((result) =>
+                /steeple/i.test(result.event)
+              ),
+              debugHeightRaw: uniqueResults.filter((result) =>
+                /hauteur/i.test(result.event)
+              ),
+              debugHeightFiltered: results.filter((result) =>
+                /hauteur/i.test(result.event)
+              ),
+              debugUniqueEvents: [
+                ...new Set(uniqueResults.map((result) => result.event)),
+              ].sort(),
+            }
+          : {}),
+      };
+
+      return data;
+    })();
+
+    return await withTimeout(
+      scrape,
+      SCRAPE_TIMEOUT_MS,
+      "Le scraping a dépassé le temps limite.",
+    );
+  } finally {
+    if (page) {
+      await page.close().catch((error) => {
+        console.error("Fermeture de la page impossible :", error);
+      });
+    }
+  }
+}
+
+const loadBilans = createBilansLoader({ scrape: scrapeBilans });
 const app = express();
 
 app.use(cors());
 app.use(express.static("public"));
-
-/* =========================
-   PERF: browser global + cache
-========================= */
-
-let browser;
-
-async function getBrowser() {
-  if (!browser) {
-    browser = await chromium.launch({ headless: true });
-    console.log("Browser launched");
-  }
-  return browser;
-}
-
-const cache = new Map();
-const CACHE_MS = 5 * 60 * 1000; // 5 minutes
-const SCRAPE_TIMEOUT_MS = 180000;
 
 /* =========================
    ROUTE API
@@ -36,165 +288,23 @@ app.get("/healthz", (_req, res) => {
 });
 
 app.get("/api/bilans", async (req, res) => {
-  const club = (req.query.club ?? "").toString().trim();
-  const annee = (req.query.annee ?? "2026").toString().trim();
-  const debug = (req.query.debug ?? "").toString().trim() === "1";
-
-  if (!/^\d{6}$/.test(club)) {
-    return res.status(400).json({
-      error: "club doit être un code à 6 chiffres, ex: 081061",
-    });
+  const parsedQuery = parseBilansQuery(req.query);
+  if (parsedQuery.error) {
+    return res.status(400).json({ error: parsedQuery.error });
   }
-
-  const cacheKey = `${club}:${annee}`;
-  const cached = cache.get(cacheKey);
-
-  if (!debug && cached && Date.now() - cached.ts < CACHE_MS) {
-    console.log("Cache hit");
-    return res.json(cached.data);
-  }
-
-  const baseUrl =
-    `https://www.athle.fr/bases/liste.aspx?frmbase=bilans&frmmode=1&frmespace=1478` +
-    `&frmannee=${encodeURIComponent(annee)}&frmclub=${encodeURIComponent(club)}` +
-    `&frmcategorie=&frmsexe=&frmepreuve=&frmvent=&frmligue=&frmdepartement=&frmstructure=&frmnationalite=&frmplaces=&frmpostback=true`;
-
-  const browserInstance = await getBrowser();
-  const page = await browserInstance.newPage();
-
-  async function gotoWithRetry(
-    url,
-    { waitUntil = "domcontentloaded", timeout = 30000 } = {},
-    attempts = 3,
-  ) {
-    let lastErr;
-    for (let i = 1; i <= attempts; i++) {
-      try {
-        await page.goto(url, { waitUntil, timeout });
-        return;
-      } catch (e) {
-        lastErr = e;
-        const msg = String(e?.message || e);
-        const retryable =
-          /ERR_NAME_NOT_RESOLVED|ERR_CONNECTION|net::|Timeout/i.test(msg);
-        if (!retryable || i === attempts) break;
-        await page.waitForTimeout(700 * i);
-      }
-    }
-    throw lastErr;
-  }
-
-  await page.route("**/*", (route) => {
-    const type = route.request().resourceType();
-    if (
-      type === "image" ||
-      type === "font" ||
-      type === "stylesheet" ||
-      type === "media"
-    ) {
-      return route.abort();
-    }
-    return route.continue();
-  });
 
   try {
-    const data = await Promise.race([
-      (async () => {
-        const all = [];
-
-
-    await gotoWithRetry(
-      `${baseUrl}&frmposition=0`,
-      { waitUntil: "domcontentloaded", timeout: 30000 },
-      3,
-    );
-    await page
-      .getByText("Résultats de votre recherche")
-      .waitFor({ timeout: 20000 });
-
-    const firstHtml = await page.content();
-    const totalPages = extractTotalPages(firstHtml);
-
-    console.log("Total pages détectées:", totalPages);
-
-    let debugTextSample = null;
-    const debugPages = [];
-
-    if (debug) {
-      debugTextSample = extractNormalizedText(firstHtml).slice(0, 2500);
-    }
-
-    for (let pos = 0; pos < totalPages; pos++) {
-      const pageUrl = `${baseUrl}&frmposition=${pos}`;
-
-      await gotoWithRetry(
-        pageUrl,
-        { waitUntil: "domcontentloaded", timeout: 30000 },
-        3,
-      );
-      await page
-        .getByText("Résultats de votre recherche")
-        .waitFor({ timeout: 20000 });
-
-      const html = await page.content();
-      const { results, stats } = parseBilansWithStats(html, club, annee);
-
-      if (debug) {
-        debugPages.push({
-          pos,
-          parsedCount: results.length,
-          stats,
-          first2: results.slice(0, 2),
-        });
-      }
-
-      all.push(...results);
-    }
-
-    const uniq = dedup(all);
-    const filtered = uniq.filter((r) => isSupportedEvent(r.event));
-
-    const rawSteeple = uniq.filter((r) => /steeple/i.test(r.event));
-    const filteredSteeple = filtered.filter((r) => /steeple/i.test(r.event));
-
-    const rawHeight = uniq.filter((r) => /hauteur/i.test(r.event));
-    const filteredHeight = filtered.filter((r) => /hauteur/i.test(r.event));
-
-    const data = {
-      clubId: club,
-      year: annee,
-      count: filtered.length,
-      results: filtered,
-      source: "athle.fr",
-      ...(debug
-        ? {
-            debugTextSample,
-            debugPages,
-            debugSteepleRaw: rawSteeple,
-            debugSteepleFiltered: filteredSteeple,
-            debugHeightRaw: rawHeight,
-            debugHeightFiltered: filteredHeight,
-            debugUniqueEvents: [...new Set(uniq.map((r) => r.event))].sort(),
-          }
-        : {}),
-    };
-
-    if (!debug) cache.set(cacheKey, { ts: Date.now(), data });
-
-        return data;
-      })(),
-      new Promise((_, reject) => {
-        setTimeout(() => reject(new Error("Le scraping a dépassé le temps limite.")), SCRAPE_TIMEOUT_MS);
-      }),
-    ]);
-
+    const data = await loadBilans(parsedQuery.value);
     return res.json(data);
-  } catch (e) {
-    const message = String(e?.message || e);
-    const status = /temps limite/i.test(message) ? 504 : 500;
-    return res.status(status).json({ error: "scrape_failed", details: message });
-  } finally {
-    await page.close();
+  } catch (error) {
+    console.error("Récupération Athlé.fr échouée :", error);
+    const timeout = error?.code === "SCRAPE_TIMEOUT";
+    return res.status(timeout ? 504 : 502).json({
+      error: "scrape_failed",
+      message: timeout
+        ? "Athlé.fr n'a pas répondu dans le temps imparti."
+        : "Impossible de récupérer les résultats depuis Athlé.fr.",
+    });
   }
 });
 
@@ -208,17 +318,17 @@ function extractTotalPages(html) {
   const pagText = $("div.select-option")
     .toArray()
     .map((el) => $(el).text().replace(/\s+/g, " ").trim())
-    .find((t) => t.includes("Page") && /\d{3}\/\d{3}/.test(t));
+    .find((text) => /\bPage\b/i.test(text) && /\d+\s*\/\s*\d+/.test(text));
 
   if (!pagText) return 1;
 
-  const m = pagText.match(/(\d{3})\/(\d{3})/);
+  const m = pagText.match(/(\d+)\s*\/\s*(\d+)/);
   if (!m) return 1;
 
   const total = parseInt(m[2], 10);
   if (!Number.isFinite(total) || total <= 0) return 1;
 
-  return Math.min(total, 20);
+  return Math.min(total, MAX_RESULTS_PAGES);
 }
 
 /* =========================
@@ -1019,23 +1129,55 @@ const PORT = process.env.PORT || 3001;
 
 export {
   app,
+  closeBrowser,
+  createBilansLoader,
   eventCategory,
   eventType,
+  extractTotalPages,
   expectedPerfRangeSeconds,
   isSupportedEvent,
   normalizeRouteHourPerf,
+  parseBilansQuery,
   parsePlacePerfToken,
   parseSummaryLine,
+  withTimeout,
 };
 
 const isMainModule =
   process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
 
-if (isMainModule) {
-  app.listen(PORT, () => {
-    console.log(`API on port ${PORT}`);
+function startServer(port = PORT) {
+  const server = app.listen(port, () => {
+    const address = server.address();
+    const activePort = typeof address === "object" ? address?.port : port;
+    console.log(`API on port ${activePort}`);
     getBrowser().catch((err) => {
       console.error("Préchargement Playwright échoué :", err);
     });
   });
+
+  let shuttingDown = false;
+  async function shutdown(signal) {
+    if (shuttingDown) return;
+    shuttingDown = true;
+    console.log(`Arrêt du serveur (${signal})…`);
+
+    server.close(async (error) => {
+      await closeBrowser();
+      if (error) {
+        console.error("Arrêt du serveur impossible :", error);
+        process.exitCode = 1;
+      }
+    });
+  }
+
+  process.once("SIGINT", () => shutdown("SIGINT"));
+  process.once("SIGTERM", () => shutdown("SIGTERM"));
+  return server;
+}
+
+export { startServer };
+
+if (isMainModule) {
+  startServer();
 }

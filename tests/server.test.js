@@ -2,13 +2,115 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  createBilansLoader,
   eventCategory,
   eventType,
+  extractTotalPages,
   expectedPerfRangeSeconds,
   isSupportedEvent,
   normalizeRouteHourPerf,
+  parseBilansQuery,
   parseSummaryLine,
+  withTimeout,
 } from "../index.js";
+
+test("valide le club et l'année avant toute récupération", () => {
+  assert.deepEqual(
+    parseBilansQuery(
+      { club: " 081061 ", annee: "2026", debug: "1" },
+      2026,
+    ),
+    {
+      value: { club: "081061", annee: "2026", debug: true },
+    },
+  );
+  assert.deepEqual(parseBilansQuery({ club: "081061" }, 2026), {
+    value: { club: "081061", annee: "2026", debug: false },
+  });
+  assert.match(parseBilansQuery({ club: "123" }, 2026).error, /6 chiffres/);
+  assert.match(
+    parseBilansQuery({ club: "081061", annee: "1999" }, 2026).error,
+    /2000 et 2027/,
+  );
+  assert.match(
+    parseBilansQuery({ club: "081061", annee: "2028" }, 2026).error,
+    /2000 et 2027/,
+  );
+});
+
+test("mutualise les demandes identiques et respecte l'expiration du cache", async () => {
+  let timestamp = 1_000;
+  let calls = 0;
+  const scrape = async () => {
+    calls += 1;
+    await new Promise((resolve) => setImmediate(resolve));
+    return { version: calls };
+  };
+  const loadBilans = createBilansLoader({
+    scrape,
+    cacheMs: 1_000,
+    now: () => timestamp,
+  });
+  const params = { club: "081061", annee: "2026", debug: false };
+
+  const [first, duplicate] = await Promise.all([
+    loadBilans(params),
+    loadBilans(params),
+  ]);
+  assert.equal(calls, 1);
+  assert.deepEqual(first, { version: 1 });
+  assert.deepEqual(duplicate, { version: 1 });
+
+  assert.deepEqual(await loadBilans(params), { version: 1 });
+  assert.equal(calls, 1);
+
+  timestamp += 1_000;
+  assert.deepEqual(await loadBilans(params), { version: 2 });
+  assert.equal(calls, 2);
+});
+
+test("ne conserve pas une récupération échouée ou une demande de débogage", async () => {
+  let calls = 0;
+  const loadBilans = createBilansLoader({
+    scrape: async () => {
+      calls += 1;
+      if (calls === 1) throw new Error("indisponible");
+      return { version: calls };
+    },
+  });
+  const params = { club: "081061", annee: "2026", debug: false };
+
+  await assert.rejects(loadBilans(params), /indisponible/);
+  assert.deepEqual(await loadBilans(params), { version: 2 });
+
+  const debugParams = { ...params, debug: true };
+  assert.deepEqual(await loadBilans(debugParams), { version: 3 });
+  assert.deepEqual(await loadBilans(debugParams), { version: 4 });
+});
+
+test("limite la taille du cache", async () => {
+  let calls = 0;
+  const loadBilans = createBilansLoader({
+    scrape: async ({ club }) => ({ club, version: ++calls }),
+    maxCacheEntries: 1,
+  });
+
+  const firstClub = { club: "081061", annee: "2026", debug: false };
+  const secondClub = { club: "081062", annee: "2026", debug: false };
+
+  assert.equal((await loadBilans(firstClub)).version, 1);
+  assert.equal((await loadBilans(secondClub)).version, 2);
+  assert.equal((await loadBilans(firstClub)).version, 3);
+});
+
+test("libère le délai maximal après succès et identifie un dépassement", async () => {
+  assert.equal(await withTimeout(Promise.resolve("ok"), 100, "trop long"), "ok");
+
+  await assert.rejects(
+    withTimeout(new Promise(() => {}), 5, "trop long"),
+    (error) => error.code === "SCRAPE_TIMEOUT" && /trop long/.test(error.message),
+  );
+});
 
 test("reconnaît les disciplines affichées dans le tableau", () => {
   const supported = [
@@ -28,6 +130,18 @@ test("reconnaît les disciplines affichées dans le tableau", () => {
 
   assert.equal(isSupportedEvent("Décathlon"), false);
   assert.equal(isSupportedEvent(""), false);
+});
+
+test("détecte les différentes formes de pagination Athlé.fr", () => {
+  assert.equal(
+    extractTotalPages('<div class="select-option">Page 1 / 12</div>'),
+    12,
+  );
+  assert.equal(
+    extractTotalPages('<div class="select-option">Page 001/025</div>'),
+    20,
+  );
+  assert.equal(extractTotalPages("<main>Aucune pagination</main>"), 1);
 });
 
 test("classe les disciplines de façon cohérente avec l'interface", () => {
