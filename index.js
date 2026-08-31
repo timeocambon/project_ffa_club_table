@@ -775,7 +775,7 @@ function expectedFieldRange(eventName) {
   if (/disque\s*\(0\.?6\s*kg\)/.test(e)) return [5.0, 25.0];
   if (/disque\s*\(0\.?8\s*kg\)/.test(e)) return [5.0, 35.0];
   if (/disque\s*\(1\.?0\s*kg\)/.test(e)) return [8.0, 45.0];
-  if (/disque\s*\(1\.?2\s*kg\)/.test(e)) return [8.0, 50.0];
+  if (/disque\s*\(1[.,]2(?:5)?\s*kg\)/.test(e)) return [8.0, 50.0];
   if (/disque\s*\(1\.?5\s*kg\)/.test(e)) return [8.0, 55.0];
   if (/disque\s*\(2\.?0\s*kg\)/.test(e)) return [8.0, 70.0];
   if (/disque/.test(e)) return [5.0, 70.0];

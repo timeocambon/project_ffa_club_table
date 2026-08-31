@@ -984,7 +984,13 @@ function eventKeyForPoints(cat, sex, eventName) {
   if (m) return `poids_${normalizeWeightNumber(m[1])}kg`;
 
   m = s.match(/^disque \(([\d.,]+)\s*kg\)$/);
-  if (m) return `disque_${normalizeWeightNumber(m[1])}kg`;
+  if (m) {
+    const weight = Number(m[1].replace(",", "."));
+    if (cat === "Minime" && sex === "M" && closeEnough(weight, 1.2)) {
+      return "disque_1_25kg";
+    }
+    return `disque_${normalizeWeightNumber(m[1])}kg`;
+  }
 
   m = s.match(/^marteau \(([\d.,]+)\s*kg\)$/);
   if (m) return `marteau_${normalizeWeightNumber(m[1])}kg`;
@@ -1129,18 +1135,22 @@ function pointsFromPerformance(row, eventName, performance, bestResult = null) {
   const parsed = perfToComparable(performance);
   if (!parsed || parsed.type !== table.type) return null;
 
-  if (table.type === "time") {
-    for (const entry of table.thresholds) {
-      if (parsed.value <= entry.value) return entry.points;
-    }
-    return null;
-  }
-
+  let bestPoints = null;
   for (const entry of table.thresholds) {
-    if (parsed.value >= entry.value) return entry.points;
+    if (!Number.isFinite(entry?.points) || !Number.isFinite(entry?.value)) {
+      continue;
+    }
+
+    const qualifies = table.type === "time"
+      ? parsed.value <= entry.value
+      : parsed.value >= entry.value;
+
+    if (qualifies && (bestPoints == null || entry.points > bestPoints)) {
+      bestPoints = entry.points;
+    }
   }
 
-  return null;
+  return bestPoints;
 }
 
 function pointsLabel(points) {
@@ -1384,8 +1394,8 @@ function getEventSortInfo(eventName) {
 }
 
 function extractThrowWeight(e) {
-  let m = e.match(/\(([\d.]+)\s*kg\)/i);
-  if (m) return Math.round(Number(m[1]) * 1000);
+  let m = e.match(/\(([\d.,]+)\s*kg\)/i);
+  if (m) return Math.round(Number(m[1].replace(",", ".")) * 1000);
 
   m = e.match(/\((\d+)\s*g\)/i);
   if (m) return Number(m[1]);
