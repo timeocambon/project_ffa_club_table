@@ -73,7 +73,7 @@ test("exclut les fichiers de développement de l'image", () => {
 
 test("empêche la publication npm accidentelle et documente la version de Node", () => {
   assert.equal(packageJson.private, true);
-  assert.equal(packageJson.engines?.node, ">=20");
+  assert.equal(packageJson.engines?.node, ">=20.18.1");
   assert.equal(packageJson.scripts?.["test:smoke"], "node scripts/smoke-test.js");
 });
 

@@ -20,7 +20,7 @@ avec les barèmes 50 et 1000.
 
 ## Prérequis
 
-- Node.js 20 ou plus récent ;
+- Node.js 20.18.1 ou plus récent ;
 - npm ;
 - Chromium fourni par Playwright.
 
