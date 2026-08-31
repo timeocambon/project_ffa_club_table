@@ -1,0 +1,137 @@
+import assert from "node:assert/strict";
+import { createServer } from "node:http";
+import { readFile } from "node:fs/promises";
+import path from "node:path";
+import test from "node:test";
+import { fileURLToPath } from "node:url";
+
+import { chromium } from "playwright";
+
+const publicDirectory = fileURLToPath(new URL("../public/", import.meta.url));
+
+const mockData = {
+  clubId: "081061",
+  year: "2026",
+  count: 3,
+  source: "test-local",
+  results: [
+    {
+      event: "10 km Route",
+      athlete: "DUPONT Alice",
+      infos: "SEF / 1999",
+      sex: "F",
+      performance: "35'00''",
+      date: "01/06/26",
+      location: "Test",
+    },
+    {
+      event: "800m",
+      athlete: "MARTIN Lea",
+      infos: "BEF / 2013",
+      sex: "F",
+      performance: "2'45''00",
+      date: "01/06/26",
+      location: "Test",
+    },
+    {
+      event: "1000m",
+      athlete: "MARTIN Lea",
+      infos: "BEF / 2013",
+      sex: "F",
+      performance: "3'20''00",
+      date: "01/06/26",
+      location: "Test",
+    },
+  ],
+};
+
+const contentTypes = {
+  ".css": "text/css; charset=utf-8",
+  ".html": "text/html; charset=utf-8",
+  ".js": "text/javascript; charset=utf-8",
+  ".json": "application/json; charset=utf-8",
+};
+
+function createTestServer() {
+  return createServer(async (request, response) => {
+    try {
+      const url = new URL(request.url, "http://127.0.0.1");
+      if (url.pathname === "/api/bilans") {
+        response.writeHead(200, {
+          "content-type": "application/json; charset=utf-8",
+        });
+        response.end(JSON.stringify(mockData));
+        return;
+      }
+
+      const relativePath = url.pathname === "/"
+        ? "index.html"
+        : decodeURIComponent(url.pathname.slice(1));
+      const filePath = path.resolve(publicDirectory, relativePath);
+
+      if (!filePath.startsWith(publicDirectory)) {
+        response.writeHead(403);
+        response.end("Forbidden");
+        return;
+      }
+
+      const body = await readFile(filePath);
+      response.writeHead(200, {
+        "content-type": contentTypes[path.extname(filePath)] ??
+          "application/octet-stream",
+      });
+      response.end(body);
+    } catch {
+      response.writeHead(404);
+      response.end("Not found");
+    }
+  });
+}
+
+test(
+  "affiche les points et les états N/D dans le tableau",
+  { timeout: 30_000 },
+  async () => {
+    const server = createTestServer();
+    let browser;
+
+    try {
+      await new Promise((resolve, reject) => {
+        server.once("error", reject);
+        server.listen(0, "127.0.0.1", resolve);
+      });
+
+      const address = server.address();
+      assert.equal(typeof address, "object");
+
+      browser = await chromium.launch({
+        headless: true,
+        args: ["--no-sandbox", "--disable-setuid-sandbox"],
+      });
+      const page = await browser.newPage();
+      const errors = [];
+      page.on("pageerror", (error) => errors.push(String(error)));
+
+      await page.goto(`http://127.0.0.1:${address.port}/`);
+      await page.getByRole("textbox", { name: "Club" }).fill("081061");
+      await page.getByRole("button", { name: "Charger" }).click();
+
+      const routeRow = page.getByRole("row", { name: /DUPONT Alice/ });
+      const benjaminRow = page.getByRole("row", { name: /MARTIN Lea/ });
+      await routeRow.waitFor();
+      await benjaminRow.waitFor();
+
+      assert.match(await routeRow.innerText(), /35'00''\s+N\/D/);
+      assert.match(await benjaminRow.innerText(), /2'45''00\s+N\/D/);
+      assert.match(await benjaminRow.innerText(), /3'20''00\s+40/);
+      assert.match(
+        await page.locator(".points-legend").innerText(),
+        /aucun barème disponible/i,
+      );
+      assert.deepEqual(errors, []);
+    } finally {
+      if (browser) await browser.close();
+      await new Promise((resolve) => server.close(resolve));
+    }
+  },
+);

@@ -1,3 +1,9 @@
+import {
+  perfToComparable,
+  pointsPresentation,
+  pointsResultFromTable,
+} from "./scoring.js";
+
 const clubEl = document.getElementById("club");
 const anneeEl = document.getElementById("annee");
 const btnFetch = document.getElementById("btnFetch");
@@ -1125,76 +1131,10 @@ function pointsTable1000For(row, eventName, bestResult) {
 
 function pointsResultFromPerformance(row, eventName, performance, bestResult = null) {
   const mode = barremeModeEl?.value === "1000" ? "1000" : "50";
-  if (!performance) return { points: null, status: "empty", mode };
-
   const table = mode === "1000"
     ? pointsTable1000For(row, eventName, bestResult)
     : pointsTable50For(row, eventName);
-  if (!table || !Array.isArray(table.thresholds)) {
-    return { points: null, status: "unavailable", mode };
-  }
-
-  const parsed = perfToComparable(performance);
-  if (!parsed || parsed.type !== table.type) {
-    return { points: null, status: "invalid", mode };
-  }
-
-  let bestPoints = null;
-  for (const entry of table.thresholds) {
-    if (!Number.isFinite(entry?.points) || !Number.isFinite(entry?.value)) {
-      continue;
-    }
-
-    const qualifies = table.type === "time"
-      ? parsed.value <= entry.value
-      : parsed.value >= entry.value;
-
-    if (qualifies && (bestPoints == null || entry.points > bestPoints)) {
-      bestPoints = entry.points;
-    }
-  }
-
-  return {
-    points: bestPoints,
-    status: bestPoints == null ? "out-of-range" : "ok",
-    mode,
-  };
-}
-
-function pointsPresentation(result) {
-  if (Number.isFinite(result?.points)) {
-    return {
-      label: String(result.points),
-      className: "has-points",
-      title: `${result.points} point${result.points > 1 ? "s" : ""}`,
-    };
-  }
-
-  if (result?.status === "unavailable") {
-    return {
-      label: "N/D",
-      className: "points-unavailable",
-      title: `Barème ${result.mode} indisponible pour cette épreuve, cette catégorie ou ce sexe.`,
-    };
-  }
-
-  if (result?.status === "invalid") {
-    return {
-      label: "?",
-      className: "points-invalid",
-      title: "La performance n'a pas pu être convertie en points.",
-    };
-  }
-
-  if (result?.status === "out-of-range") {
-    return {
-      label: "0",
-      className: "no-points",
-      title: "Performance située sous le premier seuil du barème.",
-    };
-  }
-
-  return { label: "—", className: "no-points", title: "Aucune performance." };
+  return pointsResultFromTable(table, performance, mode);
 }
 
 /* =========================
@@ -1580,112 +1520,8 @@ function pivot(results) {
 }
 
 /* =========================
-   Perf parsing (tri best/worst)
+   Comparaison des performances
 ========================= */
-
-function looksLikePerformance(s) {
-  return /\d/.test(s) && /['’":hHmM\.,]/.test(s);
-}
-
-function cleanPerf(s) {
-  return String(s)
-    .replace(/\(.*?\)/g, "")
-    .trim();
-}
-
-function perfToComparable(perf) {
-  if (!perf) return null;
-
-  let s = cleanPerf(perf);
-  if (!s) return null;
-
-  s = s.replace(/\u00a0/g, " ").trim();
-
-  let m = s.match(/^(\d+)\s*m\s*(\d{1,2})$/i);
-  if (m) {
-    const meters = Number(m[1]);
-    const cm = Number(m[2]);
-    if (Number.isFinite(meters) && Number.isFinite(cm)) {
-      return { type: "dist", value: meters + cm / 100 };
-    }
-  }
-
-  m = s.match(/^(\d+)[,.](\d{1,2})$/);
-  if (m) {
-    const meters = Number(m[1]);
-    const cm = Number(m[2]);
-    if (Number.isFinite(meters) && Number.isFinite(cm)) {
-      return { type: "dist", value: meters + cm / 100 };
-    }
-  }
-
-  m = s.match(/^(\d+)\s*m$/i);
-  if (m) {
-    const meters = Number(m[1]);
-    if (Number.isFinite(meters)) {
-      return { type: "dist", value: meters };
-    }
-  }
-
-  if (s.includes(":")) {
-    const parts = s.split(":").map((p) => p.trim());
-    let secPart = parts.pop();
-    let frac = 0;
-
-    if (secPart.includes(".")) {
-      const [secStr, fracStr] = secPart.split(".");
-      secPart = secStr;
-      frac = Number("0." + fracStr);
-    }
-
-    const secs = Number(secPart);
-    if (!Number.isFinite(secs)) return null;
-
-    let total = secs + frac;
-    let mult = 60;
-
-    while (parts.length) {
-      const n = Number(parts.pop());
-      if (!Number.isFinite(n)) return null;
-      total += n * mult;
-      mult *= 60;
-    }
-
-    return { type: "time", value: total };
-  }
-
-  let hours = 0;
-  let minutes = 0;
-  let seconds = 0;
-  let hundredths = 0;
-
-  const hm = s.match(/(\d+)\s*h/i);
-  if (hm) hours = Number(hm[1]);
-
-  const mm = s.match(/(\d+)\s*'(?!')/);
-  if (mm) minutes = Number(mm[1]);
-
-  const sm = s.match(/(\d+)\s*''\s*(\d+)?/);
-  if (sm) {
-    seconds = Number(sm[1]);
-    hundredths = sm[2] ? Number(sm[2]) : 0;
-  } else {
-    const nm = s.match(/^\d+([.,]\d+)?$/);
-    if (nm) {
-      return { type: "time", value: Number(s.replace(",", ".")) };
-    }
-    if (!looksLikePerformance(s)) return null;
-  }
-
-  if (![hours, minutes, seconds, hundredths].every(Number.isFinite))
-    return null;
-
-  const total =
-    hours * 3600 + minutes * 60 + seconds + (hundredths ? hundredths / 100 : 0);
-  if (!Number.isFinite(total) || total === 0) return null;
-
-  return { type: "time", value: total };
-}
 
 function comparePerf(aPerf, bPerf, mode) {
   const a = perfToComparable(aPerf);

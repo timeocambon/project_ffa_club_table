@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import { chromium } from "playwright";
 import * as cheerio from "cheerio";
+import { pathToFileURL } from "node:url";
 
 const app = express();
 
@@ -1016,9 +1017,25 @@ function normalizeRouteHourPerf(token, currentEvent) {
 
 const PORT = process.env.PORT || 3001;
 
-app.listen(PORT, () => {
-  console.log(`API on port ${PORT}`);
-  getBrowser().catch((err) => {
-    console.error("Préchargement Playwright échoué :", err);
+export {
+  app,
+  eventCategory,
+  eventType,
+  expectedPerfRangeSeconds,
+  isSupportedEvent,
+  normalizeRouteHourPerf,
+  parsePlacePerfToken,
+  parseSummaryLine,
+};
+
+const isMainModule =
+  process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
+
+if (isMainModule) {
+  app.listen(PORT, () => {
+    console.log(`API on port ${PORT}`);
+    getBrowser().catch((err) => {
+      console.error("Préchargement Playwright échoué :", err);
+    });
   });
-});
+}

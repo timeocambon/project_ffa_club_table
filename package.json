@@ -7,7 +7,9 @@
     "dev": "node index.js",
     "start": "node index.js",
     "validate:barremes": "node scripts/validate-barremes.js",
-    "test": "npm run validate:barremes"
+    "test:unit": "node --test tests/server.test.js tests/scoring.test.js",
+    "test:ui": "node --test tests/ui.test.js",
+    "test": "npm run validate:barremes && npm run test:unit && npm run test:ui"
   },
   "repository": {
     "type": "git",
