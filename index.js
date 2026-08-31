@@ -151,7 +151,7 @@ app.get("/api/bilans", async (req, res) => {
     }
 
     const uniq = dedup(all);
-    const filtered = uniq.filter((r) => isSelectedTrackEvent(r.event));
+    const filtered = uniq.filter((r) => isSupportedEvent(r.event));
 
     const rawSteeple = uniq.filter((r) => /steeple/i.test(r.event));
     const filteredSteeple = filtered.filter((r) => /steeple/i.test(r.event));
@@ -268,10 +268,15 @@ function extractNormalizedText(html) {
 
 function eventCategory(eventName) {
   const e = normalizeEventName(eventName);
-  if (!e) return "Sprint";
+  if (!e) return "Autres";
 
+  if (e.includes("marche")) return "Marche";
+  if (/route|trail|cross|marathon|semi/.test(e)) {
+    return "Route / Trail / Cross";
+  }
+  if (/relais|\d+\s*x\s*\d+/.test(e)) return "Sprint";
   if (e.includes("haies")) return "Haie";
-  if (e.includes("steeple")) return "Fond et demi fond";
+  if (e.includes("steeple")) return "Demi-fond / Fond";
 
   if (
     e.includes("poids") ||
@@ -279,7 +284,7 @@ function eventCategory(eventName) {
     e.includes("javelot") ||
     e.includes("marteau")
   ) {
-    return "Lancé";
+    return "Lancers";
   }
 
   if (
@@ -288,19 +293,19 @@ function eventCategory(eventName) {
     e.includes("longueur") ||
     e.includes("triple saut")
   ) {
-    return "Saut";
+    return "Sauts";
   }
 
   const m = e.match(/(\d[\d ]*)\s*m\b/);
   if (m) {
     const dist = parseInt(m[1].replace(/\s+/g, ""), 10);
     if (Number.isFinite(dist)) {
-      if (dist >= 800) return "Fond et demi fond";
+      if (dist >= 600) return "Demi-fond / Fond";
       return "Sprint";
     }
   }
 
-  return "Sprint";
+  return "Autres";
 }
 
 function parseBilansWithStats(html, clubId, annee) {
@@ -686,7 +691,7 @@ function eventType(eventName) {
   if (d <= 80) return "short-sprint";
   if (d <= 200) return "sprint";
   if (d <= 400) return "long-sprint";
-  if (d >= 800) return "endurance";
+  if (d >= 600) return "endurance";
 
   return "other";
 }
@@ -730,9 +735,11 @@ function expectedPerfRangeSeconds(eventName) {
   if (/^110\s*m\s+haies\b/.test(e)) return [13, 40];
   if (/^200\s*m\s+haies\b/.test(e)) return [25, 80];
   if (/^300\s*m\s+haies\b/.test(e)) return [35, 110];
+  if (/^320\s*m\s+haies\b/.test(e)) return [40, 120];
   if (/^400\s*m\s+haies\b/.test(e)) return [45, 160];
 
   // steeple
+  if (/^(1500|1 500)\s*m\s+steeple\b/.test(e)) return [240, 1000];
   if (/^(2000|2 000)\s*m\s+steeple\b/.test(e)) return [360, 1400];
   if (/^(3000|3 000)\s*m\s+steeple\b/.test(e)) return [500, 2200];
 
@@ -745,12 +752,14 @@ function expectedPerfRangeSeconds(eventName) {
   if (/^200\s*m\b/.test(e) && !/haies/.test(e)) return [20, 70];
   if (/^300\s*m\b/.test(e) && !/haies/.test(e)) return [30, 100];
   if (/^400\s*m\b/.test(e) && !/haies/.test(e)) return [40, 140];
+  if (/^600\s*m\b/.test(e)) return [60, 250];
   if (/^800\s*m\b/.test(e)) return [70, 400];
   if (/^(1000|1 000)\s*m\b/.test(e)) return [120, 500];
   if (/^(1500|1 500)\s*m\b/.test(e)) return [180, 700];
   if (/^(2000|2 000)\s*m\b/.test(e)) return [300, 1000];
   if (/^(3000|3 000)\s*m\b/.test(e)) return [450, 1500];
   if (/^(5000|5 000)\s*m\b/.test(e)) return [700, 3000];
+  if (/^(10000|10 000)\s*m\b/.test(e)) return [1500, 6000];
 
   return null;
 }
@@ -895,12 +904,15 @@ function normalizeEventName(eventName) {
   return (eventName || "").toLowerCase().replace(/\s+/g, " ").trim();
 }
 
-function isSelectedTrackEvent(eventName) {
+function isSupportedEvent(eventName) {
   const e = normalizeEventName(eventName);
   if (!e) return false;
 
-  if (e.includes("route")) return false;
-  if (e.includes("marche")) return false;
+  // Disciplines sans barème systématique mais déjà prises en charge par
+  // l'interface et le parseur. Elles restent visibles avec la mention N/D.
+  if (/route|trail|cross|marathon|semi/.test(e)) return true;
+  if (e.includes("marche")) return true;
+  if (/relais|\d+\s*x\s*\d+/.test(e)) return true;
 
   // sauts
   if (
@@ -930,22 +942,23 @@ function isSelectedTrackEvent(eventName) {
 
   // haies
   if (e.includes("haies")) {
-    return [50, 60, 80, 100, 110, 200, 300, 400].includes(dist);
+    return [50, 60, 80, 100, 110, 200, 300, 320, 400].includes(dist);
   }
 
   // steeple
   if (e.includes("steeple")) {
-    return [2000, 3000].includes(dist);
+    return [1500, 2000, 3000].includes(dist);
   }
 
   // plat
   return [
-    50, 60, 80, 100, 120, 200, 300, 400, 800, 1000, 1500, 2000, 3000, 5000,
+    50, 60, 80, 100, 120, 200, 300, 400, 600, 800, 1000, 1500, 2000, 3000,
+    5000, 10000,
   ].includes(dist);
 }
 
 function isAggressiveSplitEvent(eventName) {
-  return isSelectedTrackEvent(eventName);
+  return isSupportedEvent(eventName);
 }
 
 /* =========================
@@ -973,6 +986,8 @@ function isRouteLikeEvent(eventName) {
   const e = normalizeEventName(eventName);
   return (
     e.includes("route") ||
+    e.includes("trail") ||
+    e.includes("cross") ||
     e.includes("marathon") ||
     e.includes("1/2 marathon") ||
     e.includes("semi")

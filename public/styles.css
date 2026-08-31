@@ -382,6 +382,27 @@ tbody tr:hover td:first-child {
   color: var(--muted);
 }
 
+.points-cell.points-unavailable {
+  color: #f6c76a;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.points-cell.points-invalid {
+  color: #ff8f8f;
+  font-weight: 800;
+}
+
+.points-legend {
+  margin: 8px 2px 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.points-legend strong {
+  color: #f6c76a;
+}
+
 @media (max-width: 768px) {
   .topbar {
     padding: 10px;

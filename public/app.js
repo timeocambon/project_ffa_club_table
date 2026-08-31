@@ -1123,17 +1123,21 @@ function pointsTable1000For(row, eventName, bestResult) {
   return barreme1000.sexes?.[row.sex]?.[spec.venue]?.[spec.code] ?? null;
 }
 
-function pointsFromPerformance(row, eventName, performance, bestResult = null) {
-  if (!performance) return null;
-
+function pointsResultFromPerformance(row, eventName, performance, bestResult = null) {
   const mode = barremeModeEl?.value === "1000" ? "1000" : "50";
+  if (!performance) return { points: null, status: "empty", mode };
+
   const table = mode === "1000"
     ? pointsTable1000For(row, eventName, bestResult)
     : pointsTable50For(row, eventName);
-  if (!table || !Array.isArray(table.thresholds)) return null;
+  if (!table || !Array.isArray(table.thresholds)) {
+    return { points: null, status: "unavailable", mode };
+  }
 
   const parsed = perfToComparable(performance);
-  if (!parsed || parsed.type !== table.type) return null;
+  if (!parsed || parsed.type !== table.type) {
+    return { points: null, status: "invalid", mode };
+  }
 
   let bestPoints = null;
   for (const entry of table.thresholds) {
@@ -1150,11 +1154,47 @@ function pointsFromPerformance(row, eventName, performance, bestResult = null) {
     }
   }
 
-  return bestPoints;
+  return {
+    points: bestPoints,
+    status: bestPoints == null ? "out-of-range" : "ok",
+    mode,
+  };
 }
 
-function pointsLabel(points) {
-  return Number.isFinite(points) ? String(points) : "—";
+function pointsPresentation(result) {
+  if (Number.isFinite(result?.points)) {
+    return {
+      label: String(result.points),
+      className: "has-points",
+      title: `${result.points} point${result.points > 1 ? "s" : ""}`,
+    };
+  }
+
+  if (result?.status === "unavailable") {
+    return {
+      label: "N/D",
+      className: "points-unavailable",
+      title: `Barème ${result.mode} indisponible pour cette épreuve, cette catégorie ou ce sexe.`,
+    };
+  }
+
+  if (result?.status === "invalid") {
+    return {
+      label: "?",
+      className: "points-invalid",
+      title: "La performance n'a pas pu être convertie en points.",
+    };
+  }
+
+  if (result?.status === "out-of-range") {
+    return {
+      label: "0",
+      className: "no-points",
+      title: "Performance située sous le premier seuil du barème.",
+    };
+  }
+
+  return { label: "—", className: "no-points", title: "Aucune performance." };
 }
 
 /* =========================
@@ -1267,7 +1307,7 @@ function normalizeEventName(eventName) {
     return base.replace(/\s+/g, " ").trim();
   }
 
-  if (/relais|4x/.test(base)) {
+  if (/relais|\d+\s*x\s*\d+/.test(base)) {
     base = base.replace(/\brelais\b/g, "Relais");
     return base.replace(/\s+/g, " ").trim();
   }
@@ -1325,11 +1365,11 @@ function eventGroupFromName(eventName) {
   if (/haies/.test(e)) return "Haie";
   if (/steeple|mile/.test(e)) return "Demi-fond / Fond";
 
-  if (/relais|4x/.test(e)) return "Sprint";
+  if (/relais|\d+\s*x\s*\d+/.test(e)) return "Sprint";
   if (/\b(30|40|50|60|80|100|110|120|150|200|300|400)m\b/.test(e))
     return "Sprint";
 
-  if (/\b(800|1000|1500|1600|2000|3000|5000|10000)m\b/.test(e))
+  if (/\b(600|800|1000|1500|1600|2000|3000|5000|10000)m\b/.test(e))
     return "Demi-fond / Fond";
 
   return "Autres";
@@ -1485,11 +1525,6 @@ function pivot(results) {
     const infos = (r.infos ?? "").trim();
     const sex = (r.sex ?? "").trim();
     const cat = categoryLabelFromInfos(infos);
-
-    if (baseEvent === "800m") {
-      const allowed = ["Cadet", "Junior", "Espoir", "Senior", "Master"];
-      if (!allowed.includes(cat)) continue;
-    }
 
     if (!baseEvent || !athlete) continue;
 
@@ -2213,13 +2248,14 @@ function renderPivot(events, rows) {
           const list = row.perEvent.get(ev) || [];
           const best = bestResultFromList(list);
           const val = best?.performance ?? "";
-          const pts = pointsFromPerformance(row, ev, val, best);
+          const pointsResult = pointsResultFromPerformance(row, ev, val, best);
+          const pointsView = pointsPresentation(pointsResult);
           const performanceCellKey = buildCellKey(row, ev, "performance");
           const pointsCellKey = buildCellKey(row, ev, "points");
 
           return `
             <td data-cell-key="${escapeHtml(performanceCellKey)}" class="paintable-cell ${getCellColorClass(performanceCellKey)}">${escapeHtml(val)}</td>
-            <td data-cell-key="${escapeHtml(pointsCellKey)}" class="points-cell paintable-cell ${Number.isFinite(pts) ? "has-points" : "no-points"} ${getCellColorClass(pointsCellKey)}">${escapeHtml(pointsLabel(pts))}</td>
+            <td data-cell-key="${escapeHtml(pointsCellKey)}" class="points-cell paintable-cell ${pointsView.className} ${getCellColorClass(pointsCellKey)}" title="${escapeHtml(pointsView.title)}">${escapeHtml(pointsView.label)}</td>
           `;
         })
         .join("");
@@ -2233,10 +2269,15 @@ function renderPivot(events, rows) {
   attachPaintCellActions();
   refreshSelectedCellUI();
 
-  const pointsInfo = barreme50
-    ? " | barème 50: Benjamin / Minime / Cadet"
-    : barreme50LoadError
-      ? " | barème 50 indisponible"
+  const activeBarremeMode = barremeModeEl?.value === "1000" ? "1000" : "50";
+  const activeBarreme = activeBarremeMode === "1000" ? barreme1000 : barreme50;
+  const activeBarremeError = activeBarremeMode === "1000"
+    ? barreme1000LoadError
+    : barreme50LoadError;
+  const pointsInfo = activeBarreme
+    ? ` | barème ${activeBarremeMode}`
+    : activeBarremeError
+      ? ` | barème ${activeBarremeMode} indisponible`
       : "";
   const absentInfo = absentAthletes.size ? ` | absents: ${absentAthletes.size}` : "";
 
