@@ -2,14 +2,18 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 
-const [dockerfile, dockerignore, packageJson, packageLock] = await Promise.all([
-  readFile(new URL("../Dockerfile", import.meta.url), "utf8"),
-  readFile(new URL("../.dockerignore", import.meta.url), "utf8"),
-  readFile(new URL("../package.json", import.meta.url), "utf8").then(JSON.parse),
-  readFile(new URL("../package-lock.json", import.meta.url), "utf8").then(
-    JSON.parse,
-  ),
-]);
+const [ciWorkflow, dockerfile, dockerignore, packageJson, packageLock] =
+  await Promise.all([
+    readFile(new URL("../.github/workflows/ci.yml", import.meta.url), "utf8"),
+    readFile(new URL("../Dockerfile", import.meta.url), "utf8"),
+    readFile(new URL("../.dockerignore", import.meta.url), "utf8"),
+    readFile(new URL("../package.json", import.meta.url), "utf8").then(
+      JSON.parse,
+    ),
+    readFile(new URL("../package-lock.json", import.meta.url), "utf8").then(
+      JSON.parse,
+    ),
+  ]);
 
 test("aligne l'image Docker sur la version Playwright verrouillée", () => {
   const playwrightVersion =
@@ -41,4 +45,17 @@ test("exclut les fichiers de développement de l'image", () => {
 test("empêche la publication npm accidentelle et documente la version de Node", () => {
   assert.equal(packageJson.private, true);
   assert.equal(packageJson.engines?.node, ">=20");
+});
+
+test("exécute toute la suite dans GitHub Actions avec des droits minimaux", () => {
+  assert.match(ciWorkflow, /^\s*contents:\s+read\s*$/m);
+  assert.match(ciWorkflow, /uses:\s+actions\/checkout@v6/);
+  assert.match(ciWorkflow, /uses:\s+actions\/setup-node@v6/);
+  assert.match(ciWorkflow, /^\s*node-version:\s+22\s*$/m);
+  assert.match(ciWorkflow, /^\s*cache:\s+npm\s*$/m);
+  assert.match(
+    ciWorkflow,
+    /npx playwright install --with-deps chromium/,
+  );
+  assert.match(ciWorkflow, /^\s*run:\s+npm test\s*$/m);
 });

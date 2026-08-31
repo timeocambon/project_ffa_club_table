@@ -55,6 +55,13 @@ npm run test:unit
 npm run test:ui
 ```
 
+## Intégration continue
+
+Le workflow GitHub Actions `.github/workflows/ci.yml` relance automatiquement
+la même suite lors de chaque envoi de code et pour chaque pull request. Il
+utilise Node.js 22, installe Chromium et ne demande qu’un accès en lecture au
+dépôt.
+
 ## Docker
 
 Construire puis lancer l’image :
