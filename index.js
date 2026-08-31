@@ -1150,7 +1150,15 @@ function normalizeRouteHourPerf(token, currentEvent) {
   return `${parseInt(hours, 10)}h${minutes}'${sec}''${extra}`;
 }
 
-const PORT = process.env.PORT || 3001;
+function normalizePort(value, fallback = 3001) {
+  const port = Number(value);
+  return Number.isInteger(port) && port > 0 && port <= 65535
+    ? port
+    : fallback;
+}
+
+const PORT = normalizePort(process.env.PORT);
+const HOST = (process.env.HOST || "0.0.0.0").trim() || "0.0.0.0";
 
 export {
   app,
@@ -1162,6 +1170,7 @@ export {
   extractTotalPages,
   expectedPerfRangeSeconds,
   isSupportedEvent,
+  normalizePort,
   normalizeRouteHourPerf,
   parseBilansQuery,
   parsePlacePerfToken,
@@ -1172,11 +1181,11 @@ export {
 const isMainModule =
   process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
 
-function startServer(port = PORT) {
-  const server = app.listen(port, () => {
+function startServer(port = PORT, host = HOST) {
+  const server = app.listen(port, host, () => {
     const address = server.address();
     const activePort = typeof address === "object" ? address?.port : port;
-    console.log(`API on port ${activePort}`);
+    console.log(`API on http://${host}:${activePort}`);
     getBrowser().catch((err) => {
       console.error("Préchargement Playwright échoué :", err);
     });

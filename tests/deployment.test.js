@@ -2,7 +2,15 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 
-const [ciWorkflow, dockerfile, dockerignore, packageJson, packageLock] =
+const [
+  ciWorkflow,
+  dockerfile,
+  dockerignore,
+  packageJson,
+  packageLock,
+  renderBlueprint,
+  serverSource,
+] =
   await Promise.all([
     readFile(new URL("../.github/workflows/ci.yml", import.meta.url), "utf8"),
     readFile(new URL("../Dockerfile", import.meta.url), "utf8"),
@@ -13,6 +21,8 @@ const [ciWorkflow, dockerfile, dockerignore, packageJson, packageLock] =
     readFile(new URL("../package-lock.json", import.meta.url), "utf8").then(
       JSON.parse,
     ),
+    readFile(new URL("../render.yaml", import.meta.url), "utf8"),
+    readFile(new URL("../index.js", import.meta.url), "utf8"),
   ]);
 
 test("aligne l'image Docker sur la version Playwright verrouillée", () => {
@@ -30,7 +40,26 @@ test("conserve les protections de l'image de production", () => {
   assert.match(dockerfile, /EXPOSE 3001/);
   assert.match(dockerfile, /HEALTHCHECK[\s\S]+\/healthz/);
   assert.match(dockerfile, /RUN npm run validate:barremes/);
-  assert.match(dockerfile, /CMD \["npm", "start"\]/);
+  assert.match(dockerfile, /^USER pwuser$/m);
+  assert.match(dockerfile, /CMD \["node", "index\.js"\]/);
+});
+
+test("décrit un service Render Docker gratuit et surveillé", () => {
+  assert.match(renderBlueprint, /^services:\s*$/m);
+  assert.match(renderBlueprint, /^\s+- type: web\s*$/m);
+  assert.match(renderBlueprint, /^\s+runtime: docker\s*$/m);
+  assert.match(renderBlueprint, /^\s+plan: free\s*$/m);
+  assert.match(renderBlueprint, /^\s+region: frankfurt\s*$/m);
+  assert.match(renderBlueprint, /^\s+healthCheckPath: \/healthz\s*$/m);
+  assert.match(renderBlueprint, /^\s+autoDeployTrigger: checksPass\s*$/m);
+  assert.match(renderBlueprint, /^\s+maxShutdownDelaySeconds: 210\s*$/m);
+  assert.doesNotMatch(renderBlueprint, /^\s+- key: PORT\s*$/m);
+});
+
+test("écoute sur toutes les interfaces avec un port Render numérique", () => {
+  assert.match(serverSource, /const PORT = normalizePort\(process\.env\.PORT\)/);
+  assert.match(serverSource, /process\.env\.HOST \|\| "0\.0\.0\.0"/);
+  assert.match(serverSource, /app\.listen\(port, host,/);
 });
 
 test("exclut les fichiers de développement de l'image", () => {

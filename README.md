@@ -74,6 +74,30 @@ docker run --rm --ipc=host -p 3001:3001 ffa-club-table
 Le conteneur expose le port `3001` et possède un contrôle de santé sur
 `/healthz`. Le port peut être remplacé avec `-e PORT=8080 -p 8080:8080`.
 
+## Déploiement sur Render
+
+Le fichier `render.yaml` prépare un service web Docker avec les réglages
+adaptés au projet : région de Francfort, contrôle de santé sur `/healthz`,
+offre gratuite et déploiement automatique uniquement après la réussite des
+contrôles GitHub Actions.
+
+Pour publier l'application :
+
+1. envoyer la branche principale sur GitHub ;
+2. choisir **New > Blueprint** dans le tableau de bord Render ;
+3. connecter ce dépôt et laisser Render détecter `render.yaml` ;
+4. vérifier le nom du service puis lancer **Apply**.
+
+Render fournit automatiquement la variable `PORT`. Il ne faut pas la créer
+manuellement : le serveur la valide et écoute sur `0.0.0.0`, comme demandé par
+la plateforme. Aucun secret ni aucune base de données ne sont nécessaires.
+
+L'offre gratuite se met en veille après 15 minutes sans trafic. La première
+visite suivante peut donc prendre environ une minute. Pour un service toujours
+disponible, il faudra remplacer l'offre `free` par une offre payante dans
+Render. Les sauvegardes de l'application restent stockées dans le navigateur
+de chaque utilisateur et ne dépendent pas du disque temporaire du serveur.
+
 ## API
 
 ### `GET /healthz`

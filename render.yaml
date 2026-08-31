@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: ffa-club-table
+    runtime: docker
+    plan: free
+    region: frankfurt
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /healthz
+    autoDeployTrigger: checksPass
+    maxShutdownDelaySeconds: 210
+    envVars:
+      - key: NODE_ENV
+        value: production

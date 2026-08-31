@@ -10,11 +10,19 @@ import {
   extractTotalPages,
   expectedPerfRangeSeconds,
   isSupportedEvent,
+  normalizePort,
   normalizeRouteHourPerf,
   parseBilansQuery,
   parseSummaryLine,
   withTimeout,
 } from "../index.js";
+
+test("normalise le port fourni par la plateforme d'hébergement", () => {
+  assert.equal(normalizePort("10000"), 10000);
+  assert.equal(normalizePort(8080), 8080);
+  assert.equal(normalizePort("invalide"), 3001);
+  assert.equal(normalizePort("70000"), 3001);
+});
 
 test("applique des en-têtes HTTP restrictifs sans exposer Express", () => {
   const headers = new Map();
