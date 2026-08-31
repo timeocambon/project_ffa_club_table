@@ -98,6 +98,23 @@ disponible, il faudra remplacer l'offre `free` par une offre payante dans
 Render. Les sauvegardes de l'application restent stockées dans le navigateur
 de chaque utilisateur et ne dépendent pas du disque temporaire du serveur.
 
+Après un déploiement, remplacer l'adresse ci-dessous par celle fournie par
+Render pour contrôler la page, les ressources, la sécurité et l'API :
+
+```bash
+APP_URL=https://ffa-club-table.onrender.com npm run test:smoke
+```
+
+Pour inclure une récupération réelle depuis Athlé.fr :
+
+```bash
+APP_URL=https://ffa-club-table.onrender.com \
+SMOKE_CLUB=081061 \
+SMOKE_YEAR=2026 \
+SMOKE_REQUIRE_RESULTS=1 \
+npm run test:smoke
+```
+
 ## API
 
 ### `GET /healthz`
