@@ -12,7 +12,7 @@ const publicDirectory = fileURLToPath(new URL("../public/", import.meta.url));
 const mockData = {
   clubId: "081061",
   year: "2026",
-  count: 5,
+  count: 6,
   source: "test-local",
   results: [
     {
@@ -39,8 +39,19 @@ const mockData = {
       infos: "BEF / 2013",
       sex: "F",
       performance: "3'20''00",
+      place: 1,
       date: "01/06/26",
       location: "Test",
+    },
+    {
+      event: "1000m",
+      athlete: "MARTIN Lea",
+      infos: "BEF / 2013",
+      sex: "F",
+      performance: "3'10''00",
+      place: 2,
+      date: "08/06/26",
+      location: "Test 2",
     },
     {
       event: "50m",
@@ -180,7 +191,8 @@ test(
 
       assert.match(await routeRow.innerText(), /35'00''\s+N\/D/);
       assert.match(await benjaminRow.innerText(), /2'45''00\s+N\/D/);
-      assert.match(await benjaminRow.innerText(), /3'20''00\s+40/);
+      assert.match(await benjaminRow.innerText(), /3'10''00/);
+      assert.doesNotMatch(await benjaminRow.innerText(), /3'20''00/);
       assert.match(await poussinRow.innerText(), /8''00\s+9/);
       assert.match(await steepleRow.innerText(), /9'00''00\s+N\/D/);
       assert.match(

@@ -1480,6 +1480,18 @@ function betterResult(a, b) {
   if (!a) return b;
   if (!b) return a;
 
+  const av = perfToComparable(a.performance);
+  const bv = perfToComparable(b.performance);
+
+  if (av && bv && av.type === bv.type && av.value !== bv.value) {
+    return av.type === "dist"
+      ? av.value > bv.value ? a : b
+      : av.value < bv.value ? a : b;
+  }
+
+  if (av && !bv) return a;
+  if (bv && !av) return b;
+
   const pa = a.place == null ? null : Number(a.place);
   const pb = b.place == null ? null : Number(b.place);
 
@@ -1487,13 +1499,7 @@ function betterResult(a, b) {
   if (Number.isFinite(pa) && pb == null) return a;
   if (Number.isFinite(pb) && pa == null) return b;
 
-  const av = perfToComparable(a.performance);
-  const bv = perfToComparable(b.performance);
-  if (!av) return b;
-  if (!bv) return a;
-
-  const dist = av.type === "dist" || bv.type === "dist";
-  return dist ? (av.value >= bv.value ? a : b) : av.value <= bv.value ? a : b;
+  return a;
 }
 
 function bestResultFromList(list) {
