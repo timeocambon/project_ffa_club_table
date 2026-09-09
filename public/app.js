@@ -1337,15 +1337,17 @@ function eventGroupFromName(eventName) {
   e = e.replace(/(\d)\s+(\d)/g, "$1$2");
   e = e.replace(/\s+/g, " ").trim();
 
-  if (/(longueur|triple|hauteur|perche)/.test(e)) return "Sauts";
-  if (/(poids|disque|javelot|marteau)/.test(e)) return "Lancers";
-  if (/marche/.test(e)) return "Marche";
-
   if (
-    /(tri'?athlon|tetrathlon|pentathlon|heptathlon|d[ée]cathlon|combin)/.test(e)
+    /(tri'?athlon|t[ée]trathlon|pentathlon|hexathlon|heptathlon|enn[ée]athlon|octathlon|d[ée]cathlon|combin)/.test(
+      e,
+    )
   ) {
     return "Combinées";
   }
+
+  if (/(longueur|triple|hauteur|perche)/.test(e)) return "Sauts";
+  if (/(poids|disque|javelot|marteau)/.test(e)) return "Lancers";
+  if (/marche/.test(e)) return "Marche";
 
   if (/(route|trail|cross|semi|marathon)/.test(e))
     return "Route / Trail / Cross";
@@ -1367,6 +1369,14 @@ function eventGroupFromName(eventName) {
 
 function getEventSortInfo(eventName) {
   const e = normalizeEventName(eventName).toLowerCase();
+
+  if (
+    /(tri'?athlon|t[ée]trathlon|pentathlon|hexathlon|heptathlon|enn[ée]athlon|octathlon|d[ée]cathlon|combin)/.test(
+      e,
+    )
+  ) {
+    return { bucket: 8, meters: 99999, subtype: 9, family: 999, label: e };
+  }
 
   // courses / haies / steeple
   const m = e.match(/(\d+)\s*m\b/);

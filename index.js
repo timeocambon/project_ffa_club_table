@@ -406,6 +406,14 @@ function eventCategory(eventName) {
   const e = normalizeEventName(eventName);
   if (!e) return "Autres";
 
+  if (
+    /(tri'?athlon|t[ée]trathlon|pentathlon|hexathlon|heptathlon|enn[ée]athlon|octathlon|d[ée]cathlon|combin)/.test(
+      e,
+    )
+  ) {
+    return "Combinées";
+  }
+
   if (e.includes("marche")) return "Marche";
   if (/route|trail|cross|marathon|semi/.test(e)) {
     return "Route / Trail / Cross";
@@ -444,7 +452,125 @@ function eventCategory(eventName) {
   return "Autres";
 }
 
+function normalizeCellText(value) {
+  return String(value || "")
+    .replace(/\u00a0/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function relayMembersFromDetailRow($, resultRow) {
+  const detailRow = resultRow.next("tr.detail-row");
+  if (!detailRow.length) return "";
+
+  const firstInnerRow = detailRow
+    .find("table.detail-inner-table > tbody > tr")
+    .first();
+
+  if (firstInnerRow.children("th").length) return "";
+
+  return normalizeCellText(firstInnerRow.children("td").first().text())
+    .replace(/\s*\([^)]*\)/g, "")
+    .replace(/\s*,\s*/g, ", ")
+    .trim();
+}
+
+function parseBilansFromDomWithStats(html, clubId, annee) {
+  const $ = cheerio.load(html);
+  const rows = $("tr").toArray();
+  const results = [];
+  let currentEvent = null;
+  let currentSex = null;
+
+  const headerRe = new RegExp(
+    `^${escapeRegExp(annee)}\\s*\\|\\s*([^|]+)\\|\\s*([FMX])\\s*$`,
+  );
+
+  const stats = {
+    totalLines: rows.length,
+    headersSeen: 0,
+    clubLinesSeen: 0,
+    summarySeen: 0,
+    summaryParsedOk: 0,
+    firstHeader: null,
+    firstClubLine: null,
+    firstSummaryLine: null,
+    firstSummaryParseError: null,
+    parser: "dom",
+  };
+
+  for (const element of rows) {
+    const row = $(element);
+    const cells = row.children("td, th").toArray();
+    const rowText = normalizeCellText(row.text());
+    const header = rowText.match(headerRe);
+
+    if (header) {
+      currentEvent = header[1].trim();
+      currentSex = header[2].trim();
+      stats.headersSeen += 1;
+      if (!stats.firstHeader) stats.firstHeader = rowText;
+      continue;
+    }
+
+    if (!currentEvent || !currentSex) continue;
+    if (row.hasClass("detail-row") || cells.length !== 10) continue;
+
+    const fields = cells.map((cell) => normalizeCellText($(cell).text()));
+    if (/^place$/i.test(fields[0])) continue;
+
+    const clubName = fields[3];
+    if (!clubName) continue;
+
+    stats.clubLinesSeen += 1;
+    stats.summarySeen += 1;
+    if (!stats.firstClubLine) stats.firstClubLine = rowText;
+    if (!stats.firstSummaryLine) stats.firstSummaryLine = rowText;
+
+    const rawPlace = fields[0];
+    const place = /^\d+$/.test(rawPlace) ? parseInt(rawPlace, 10) : null;
+    const performance = normalizeCellText(
+      row.children("td").eq(1).find("b").first().text() || fields[1],
+    );
+    const athlete = fields[2] || relayMembersFromDetailRow($, row);
+
+    if (!performance || !athlete) {
+      if (!stats.firstSummaryParseError) stats.firstSummaryParseError = rowText;
+      continue;
+    }
+
+    stats.summaryParsedOk += 1;
+    results.push({
+      clubId,
+      year: annee,
+      category: eventCategory(currentEvent),
+      event: currentEvent,
+      sex: currentSex,
+      place,
+      performance,
+      athlete,
+      clubName,
+      league: fields[4] || null,
+      department: fields[5] || null,
+      infos: fields[6] || null,
+      date: fields[7] || null,
+      location: fields[8] || null,
+    });
+  }
+
+  return { results, stats };
+}
+
 function parseBilansWithStats(html, clubId, annee) {
+  const domParsed = parseBilansFromDomWithStats(html, clubId, annee);
+  if (domParsed.stats.headersSeen > 0 && domParsed.stats.clubLinesSeen > 0) {
+    return domParsed;
+  }
+
+  return parseBilansFromTextWithStats(html, clubId, annee);
+}
+
+function parseBilansFromTextWithStats(html, clubId, annee) {
   const text = extractNormalizedText(html);
   const lines = text
     .split("\n")
@@ -1173,6 +1299,7 @@ export {
   normalizePort,
   normalizeRouteHourPerf,
   parseBilansQuery,
+  parseBilansWithStats,
   parsePlacePerfToken,
   parseSummaryLine,
   withTimeout,
